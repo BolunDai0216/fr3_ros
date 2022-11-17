@@ -3,7 +3,6 @@
 #include <pinocchio/fwd.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 #include <pinocchio/algorithm/joint-configuration.hpp>
-#include <pinocchio/algorithm/rnea.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
 #include <pinocchio/algorithm/jacobian.hpp>
 #include <pinocchio/algorithm/aba.hpp>
@@ -57,7 +56,6 @@ class JointPDController : public controller_interface::MultiInterfaceController<
 
   // joint targets
   Eigen::Matrix<double, 7, 1> delta_q_target;
-  Eigen::Matrix<double, 7, 1> dq_target;
 
   // applied torque
   Eigen::Matrix<double, 7, 1> torques;

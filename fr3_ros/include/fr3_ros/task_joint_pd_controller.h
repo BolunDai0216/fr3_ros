@@ -3,7 +3,6 @@
 #include <pinocchio/fwd.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 #include <pinocchio/algorithm/joint-configuration.hpp>
-#include <pinocchio/algorithm/rnea.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
 #include <pinocchio/algorithm/jacobian.hpp>
 #include <pinocchio/algorithm/aba.hpp>
@@ -57,7 +56,7 @@ class TaskJointPDController : public controller_interface::MultiInterfaceControl
 
   // joint targets
   Eigen::Matrix<double, 7, 1> delta_q_target;
-  Eigen::Matrix<double, 7, 1> dq_target;
+  Eigen::Matrix<double, 7, 1> ddq_cmd;
 
   // applied torque
   Eigen::Matrix<double, 7, 1> torques;
@@ -68,6 +67,7 @@ class TaskJointPDController : public controller_interface::MultiInterfaceControl
   // changing position vector target
   Eigen::Matrix<double, 3, 1> p_target;
   Eigen::Matrix<double, 6, 1> dP_target;
+  Eigen::Matrix<double, 6, 1> ddP_cmd;
 
   // measured end-effector configuration
   Eigen::Matrix<double, 3, 1> p_measured;
@@ -75,6 +75,7 @@ class TaskJointPDController : public controller_interface::MultiInterfaceControl
 
   // end-effector Jacobian
   Eigen::Matrix<double, 6, 7> jacobian;
+  Eigen::Matrix<double, 6, 7> djacobian;
 
   // pseudo-inverse
   Eigen::MatrixXd pinv_jacobian;

@@ -1,5 +1,4 @@
 #include <fr3_ros/controller_utils.h>
-#include <Eigen/Dense>
 
 namespace fr3_ros { 
 

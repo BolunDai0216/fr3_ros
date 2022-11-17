@@ -134,7 +134,9 @@ void TaskJointPDController::starting(const ros::Time& /* time */) {
   // get current end-effector position and orientation
   p_target = data.oMf[ee_frame_id].translation();
   R_target = data.oMf[ee_frame_id].rotation();
+
   dP_target << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+  ddP_cmd << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
   // get Kp and Kd gains
   readJointPDGains(k_gains_, d_gains_, Kp, Kd);
@@ -162,6 +164,9 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
   // get end-effector jacobian
   pin::getFrameJacobian(model, data, ee_frame_id, pin::LOCAL_WORLD_ALIGNED, jacobian);
 
+  // get time derivative of positional Jacobian
+  pin::getFrameJacobianTimeVariation(model, data, ee_frame_id, pin::LOCAL_WORLD_ALIGNED, djacobian);
+
   // compute orientation error with targets
   Eigen::Matrix<double, 3, 3> R_error = R_target * R_measured.transpose();
   Eigen::AngleAxisd AngleAxisErr(R_error);
@@ -172,6 +177,9 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
 
   // compute new dP_target along the y-axis
   dP_target[1] = (M_PI / half_period) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
+
+  // compute new ddP_cmd along the y-axis
+  ddP_cmd[1] = (M_PI * M_PI / (half_period * half_period)) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
 
   // compute positional error
   Eigen::Matrix<double, 6, 1> P_error;
@@ -184,7 +192,7 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
   delta_q_target = pinv_jacobian * P_error;
 
   // compute joint torque
-  auto ddq_cmd = Kp * delta_q_target + Kd * (pinv_jacobian * dP_target - dq);
+  ddq_cmd = pinv_jacobian * (ddP_cmd - djacobian * dq) - Kd * dq + Kp * pinv_jacobian * P_error + Kd * pinv_jacobian * dP_target;
 
   // get M, h, g
   getDynamicsParameter(model, data, q, dq);
