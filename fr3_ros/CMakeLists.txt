@@ -75,6 +75,8 @@ catkin_package(
 
 add_library(fr3_ros
   src/joint_pd_controller.cpp
+  src/task_joint_pd_controller.cpp
+  src/controller_utils.cpp
 )
 
 add_dependencies(fr3_ros
