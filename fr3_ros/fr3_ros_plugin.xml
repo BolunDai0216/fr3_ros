@@ -1,0 +1,7 @@
+<library path="lib/libfr3_ros">
+  <class name="fr3_ros/JointPDController" type="fr3_ros::JointPDController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A joint-space PD controller for testing purpose using Pinocchio.
+    </description>
+  </class>
+</library>
