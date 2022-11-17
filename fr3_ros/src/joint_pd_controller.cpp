@@ -165,7 +165,7 @@ void JointPDController::update(const ros::Time& /*time*/, const ros::Duration& p
   Eigen::Matrix<double, 3, 3> R_error = R_target * R_measured.transpose();
   Eigen::AngleAxisd AngleAxisErr(R_error);
   Eigen::Vector3d rotvec_err = AngleAxisErr.axis() * AngleAxisErr.angle();
-
+  
   double _T = 3;
   double _A = 0.3;
 
@@ -179,19 +179,17 @@ void JointPDController::update(const ros::Time& /*time*/, const ros::Duration& p
   Eigen::Matrix<double, 6, 1> P_error;
   P_error << p_target - p_measured, rotvec_err;
 
-  // compute joint target
-  delta_q_target = pinv_jacobian * P_error;
-
   // compute pseudo-inverse of Jacobian
   franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
 
-  // compute commanded joint acceleration
+  // compute joint target
+  delta_q_target = pinv_jacobian * P_error;
+
+  // compute joint torque
   auto ddq_cmd = Kp * delta_q_target + Kd * (pinv_jacobian * dP_target - dq);
 
-  // compute M, C, G
   getDynamicsParameter(model, data, q, dq);
 
-  // torques = Mddq + C (gravity is compensated)
   torques = data.M * ddq_cmd + (data.nle - data.g);
 
   // Saturate torque rate to avoid discontinuities

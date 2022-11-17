@@ -79,7 +79,7 @@ class JointPDController : public controller_interface::MultiInterfaceController<
   // pseudo-inverse
   Eigen::MatrixXd pinv_jacobian;
 
-  // define gains for pd controll
+  // define gains for PD controller
   Eigen::Matrix<double, 7, 7> Kp;
   Eigen::Matrix<double, 7, 7> Kd;
 
