@@ -18,7 +18,7 @@ namespace pin = pinocchio;
 namespace fr3_ros {
 
 bool TaskJointPDController::init(hardware_interface::RobotHW* robot_hw,
-                                          ros::NodeHandle& node_handle) {
+                                 ros::NodeHandle& node_handle) {
   // check if got arm_id
   std::string arm_id;
   if (!node_handle.getParam("arm_id", arm_id)) {
@@ -206,6 +206,12 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(torques[i]);
   }
+}
+
+void TaskJointPDController::stopping(const ros::Time& /*time*/) {
+  // WARNING: DO NOT SEND ZERO VELOCITIES HERE AS IN CASE OF ABORTING DURING MOTION
+  // A JUMP TO ZERO WILL BE COMMANDED PUTTING HIGH LOADS ON THE ROBOT. LET THE DEFAULT
+  // BUILT-IN STOPPING BEHAVIOR SLOW DOWN THE ROBOT.
 }
 
 }  // namespace fr3_ros

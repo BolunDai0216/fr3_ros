@@ -37,6 +37,7 @@ class TaskJointPDController : public controller_interface::MultiInterfaceControl
   bool init(hardware_interface::RobotHW* robot_hardware, ros::NodeHandle& node_handle) override;
   void starting(const ros::Time&) override;
   void update(const ros::Time&, const ros::Duration& period) override;
+  void stopping(const ros::Time&) override;
 
  private:
   // pinocchio model & data
