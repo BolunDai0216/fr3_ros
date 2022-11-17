@@ -85,6 +85,9 @@ class JointPDController : public controller_interface::MultiInterfaceController<
 
   std::vector<double> k_gains_;
   std::vector<double> d_gains_;
+
+  double half_period = 3;
+  double amplitude = 0.3;
 };
 
 }  // namespace fr3_ros

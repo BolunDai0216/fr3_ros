@@ -19,7 +19,7 @@ namespace fr3_ros {
 inline void getDynamicsParameter(pinocchio::Model& model,
                                  pinocchio::Data& data,
                                  const Eigen::Matrix<double, 7, 1>& q, 
-                                 const Eigen::Matrix<double, 7, 1>& dq){
+                                 const Eigen::Matrix<double, 7, 1>& dq) {
   // compute the upper triangle portion of the mass matrix
   pin::crba(model, data, q);
 

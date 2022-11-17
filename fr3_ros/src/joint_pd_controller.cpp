@@ -95,20 +95,25 @@ bool JointPDController::init(hardware_interface::RobotHW* robot_hw,
 
   if (!node_handle.getParam("k_gains", k_gains_) || k_gains_.size() != 7) {
     ROS_ERROR(
-        "JointPDTestController:  Invalid or no k_gain parameters provided, aborting "
+        "JointPDController:  Invalid or no k_gain parameters provided, aborting "
         "controller init!");
     return false;
   }
 
   if (!node_handle.getParam("d_gains", d_gains_) || d_gains_.size() != 7) {
     ROS_ERROR(
-        "JointPDTestController:  Invalid or no d_gain parameters provided, aborting "
+        "JointPDController:  Invalid or no d_gain parameters provided, aborting "
         "controller init!");
+    return false;
+  }
+  
+  std::string urdf_filename;
+  if (!node_handle.getParam("urdf_filename", urdf_filename)) {
+    ROS_ERROR_STREAM("JointPDController: Could not read parameter urdf_filename");
     return false;
   }
 
   // build pin_robot from urdf
-  std::string urdf_filename = "/home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf";
   pin::urdf::buildModel(urdf_filename, model);
   data = pin::Data(model);
 
@@ -165,15 +170,12 @@ void JointPDController::update(const ros::Time& /*time*/, const ros::Duration& p
   Eigen::Matrix<double, 3, 3> R_error = R_target * R_measured.transpose();
   Eigen::AngleAxisd AngleAxisErr(R_error);
   Eigen::Vector3d rotvec_err = AngleAxisErr.axis() * AngleAxisErr.angle();
-  
-  double _T = 3;
-  double _A = 0.3;
 
   // compute new p_target along the y-axis
-  p_target[1] = std::sin(M_PI * controlller_clock / _T) * _A;
+  p_target[1] = std::sin(M_PI * controlller_clock / half_period) * amplitude;
 
   // compute new dP_target along the y-axis
-  dP_target[1] = (M_PI / _T) * std::cos(M_PI * controlller_clock / _T) * _A;
+  dP_target[1] = (M_PI / half_period) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
 
   // compute positional error
   Eigen::Matrix<double, 6, 1> P_error;
