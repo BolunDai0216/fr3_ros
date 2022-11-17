@@ -137,11 +137,7 @@ void JointPDController::starting(const ros::Time& /* time */) {
   dP_target << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
   // get Kp and Kd gains
-  Eigen::Map<Eigen::Matrix<double, 7, 1>> k_gains_array(k_gains_.data());
-  Eigen::Map<Eigen::Matrix<double, 7, 1>> d_gains_array(d_gains_.data());
-
-  Kp = k_gains_array.array().matrix().asDiagonal();
-  Kd = d_gains_array.array().matrix().asDiagonal();
+  readJointPDGains(k_gains_, d_gains_, Kp, Kd);
   
   // initialize clock
   controlller_clock = 0.0;
@@ -190,6 +186,7 @@ void JointPDController::update(const ros::Time& /*time*/, const ros::Duration& p
   // compute joint torque
   auto ddq_cmd = Kp * delta_q_target + Kd * (pinv_jacobian * dP_target - dq);
 
+  // get M, h, g
   getDynamicsParameter(model, data, q, dq);
 
   torques = data.M * ddq_cmd + (data.nle - data.g);
