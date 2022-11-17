@@ -32,20 +32,14 @@
 namespace fr3_ros {
 
 class JointPDController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
-                                                                                       hardware_interface::EffortJointInterface, 
-                                                                                       franka_hw::FrankaStateInterface> {
+                                                                                hardware_interface::EffortJointInterface, 
+                                                                                franka_hw::FrankaStateInterface> {
  public:
   bool init(hardware_interface::RobotHW* robot_hardware, ros::NodeHandle& node_handle) override;
   void starting(const ros::Time&) override;
   void update(const ros::Time&, const ros::Duration& period) override;
-  bool read_gains(ros::NodeHandle& node_handle);
 
  private:
-  // Saturation
-  Eigen::Matrix<double, 7, 1> saturateTorqueRate(
-      const Eigen::Matrix<double, 7, 1>& tau_d_calculated,
-      const Eigen::Matrix<double, 7, 1>& tau_J_d);  // NOLINT (readability-identifier-naming)
-
   // pinocchio model & data
   pinocchio::Model model;
   pinocchio::Data data;
@@ -60,9 +54,6 @@ class JointPDController : public controller_interface::MultiInterfaceController<
 
   // clock only for controller
   double controlller_clock;
-
-  // max torque rate
-  const double delta_tau_max_{1.0};
 
   // joint targets
   Eigen::Matrix<double, 7, 1> delta_q_target;
@@ -89,10 +80,6 @@ class JointPDController : public controller_interface::MultiInterfaceController<
   Eigen::MatrixXd pinv_jacobian;
 
   // define gains for pd controll
-  double p_gain;
-  double d_gain;
-  double dq_gain;
-
   Eigen::Matrix<double, 7, 7> Kp;
   Eigen::Matrix<double, 7, 7> Kd;
 

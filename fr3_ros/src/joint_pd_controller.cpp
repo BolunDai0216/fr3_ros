@@ -1,6 +1,8 @@
 #include <fr3_ros/joint_pd_controller.h>
 #include <franka/robot_state.h>
 #include <franka_example_controllers/pseudo_inversion.h>
+#include <fr3_ros/pinocchio_utils.h>
+#include <fr3_ros/controller_utils.h>
 
 #include <cmath>
 #include <optional>
@@ -105,8 +107,6 @@ bool JointPDController::init(hardware_interface::RobotHW* robot_hw,
     return false;
   }
 
-  read_gains(node_handle);
-
   // build pin_robot from urdf
   std::string urdf_filename = "/home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf";
   pin::urdf::buildModel(urdf_filename, model);
@@ -121,10 +121,7 @@ void JointPDController::starting(const ros::Time& /* time */) {
   Eigen::Map<Eigen::Matrix<double, 7, 1>> q_init(initial_state.q.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> dq_init(initial_state.dq.data());
 
-  // update pinocchio robot model
-  pin::forwardKinematics(model, data, q_init, dq_init);
-  pin::computeJointJacobians(model, data, q_init); 
-  pin::updateFramePlacements(model, data);
+  updatePinocchioModel(model, data, q_init, dq_init);
 
   // define end-effector frame id in pinocchio
   ee_frame_id = model.getFrameId("fr3_hand_tcp");
@@ -155,18 +152,11 @@ void JointPDController::update(const ros::Time& /*time*/, const ros::Duration& p
   Eigen::Map<Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_J_d(robot_state.tau_J_d.data());
 
-  // update pinocchio robot model
-  pin::forwardKinematics(model, data, q, dq);
-  pin::computeJointJacobians(model, data, q); 
-  pin::updateFramePlacements(model, data);
+  updatePinocchioModel(model, data, q, dq);
 
   // measure end-effector position and orientation
   p_measured = data.oMf[ee_frame_id].translation();
   R_measured = data.oMf[ee_frame_id].rotation();
-
-  // get end-effector jacobian
-  std::array<double, 42> jacobian_array = model_handle_->getZeroJacobian(franka::Frame::kEndEffector);
-  Eigen::Map<Eigen::Matrix<double, 6, 7>> _jacobian(jacobian_array.data());
 
   // get end-effector jacobian
   pin::getFrameJacobian(model, data, ee_frame_id, pin::LOCAL_WORLD_ALIGNED, jacobian);
@@ -175,7 +165,7 @@ void JointPDController::update(const ros::Time& /*time*/, const ros::Duration& p
   Eigen::Matrix<double, 3, 3> R_error = R_target * R_measured.transpose();
   Eigen::AngleAxisd AngleAxisErr(R_error);
   Eigen::Vector3d rotvec_err = AngleAxisErr.axis() * AngleAxisErr.angle();
-  
+
   double _T = 3;
   double _A = 0.3;
 
@@ -189,33 +179,20 @@ void JointPDController::update(const ros::Time& /*time*/, const ros::Duration& p
   Eigen::Matrix<double, 6, 1> P_error;
   P_error << p_target - p_measured, rotvec_err;
 
-  // compute pseudo-inverse of Jacobian
-  franka_example_controllers::pseudoInverse(_jacobian, pinv_jacobian);
-
   // compute joint target
   delta_q_target = pinv_jacobian * P_error;
 
-  // compute joint torque
+  // compute pseudo-inverse of Jacobian
+  franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
+
+  // compute commanded joint acceleration
   auto ddq_cmd = Kp * delta_q_target + Kd * (pinv_jacobian * dP_target - dq);
 
-  pin::crba(model, data, q);
-  pin::nonLinearEffects(model, data, q, dq);
-  pin::computeGeneralizedGravity(model, data, q);
-  data.M.triangularView<Eigen::StrictlyLower>() = data.M.transpose().triangularView<Eigen::StrictlyLower>();
-  
-  ROS_INFO_STREAM("M: \n" << data.M);
-  ROS_INFO_STREAM("C: \n" << data.nle - data.g);
+  // compute M, C, G
+  getDynamicsParameter(model, data, q, dq);
 
-  // get mass matrix
-  std::array<double, 49> mass_array = model_handle_->getMass();
-  Eigen::Map<Eigen::Matrix<double, 7, 7>> M(mass_array.data());
-
-  // get Coriolis and centrifugal terms
-  std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
-  Eigen::Map<Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
-
+  // torques = Mddq + C (gravity is compensated)
   torques = data.M * ddq_cmd + (data.nle - data.g);
-  // torques = ddq_cmd;
 
   // Saturate torque rate to avoid discontinuities
   torques << saturateTorqueRate(torques, tau_J_d);
@@ -224,56 +201,6 @@ void JointPDController::update(const ros::Time& /*time*/, const ros::Duration& p
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(torques[i]);
   }
-
-  // ROS_INFO_STREAM("Positional Error: " << P_error.transpose());
-
-  Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_J(robot_state.tau_J.data());
-  Eigen::Map<Eigen::Matrix<double, 7, 1>> _tau_J_d(robot_state.tau_J_d.data());
-
-  // get gravitational terms
-  std::array<double, 7> gravitational_array = model_handle_->getGravity();
-  Eigen::Map<Eigen::Matrix<double, 7, 1>> gravitational(gravitational_array.data());
-
-  // ROS_INFO_STREAM("=========================================");
-  // ROS_INFO_STREAM("Torque Error     : " << (tau_J - tau_J_d - gravitational).transpose());
-  // ROS_INFO_STREAM("ddq Commanded    : " << ddq_cmd.transpose());
-  // ROS_INFO_STREAM("Torque Commanded : " << torques.transpose());
-  // ROS_INFO_STREAM("Torque Measured  : " << tau_J.transpose());
-  // ROS_INFO_STREAM("Torque Desired   : " << tau_J_d.transpose());
-}
-
-Eigen::Matrix<double, 7, 1> JointPDController::saturateTorqueRate(
-    const Eigen::Matrix<double, 7, 1>& tau_d_calculated,
-    const Eigen::Matrix<double, 7, 1>& tau_J_d) {  // NOLINT (readability-identifier-naming)
-  Eigen::Matrix<double, 7, 1> tau_d_saturated{};
-  for (size_t i = 0; i < 7; i++) {
-    double difference = tau_d_calculated[i] - tau_J_d[i];
-    tau_d_saturated[i] =
-        tau_J_d[i] + std::max(std::min(difference, delta_tau_max_), -delta_tau_max_);
-  }
-  return tau_d_saturated;
-}
-
-bool JointPDController::read_gains(ros::NodeHandle& node_handle) {
-  // check if got p_gain
-  if (!node_handle.getParam("p_gain", p_gain)) {
-    ROS_ERROR_STREAM("JointPDController: Could not read parameter p_gain");
-    return false;
-  }
-
-  // check if got d_gain
-  if (!node_handle.getParam("d_gain", d_gain)) {
-    ROS_ERROR_STREAM("JointPDController: Could not read parameter d_gain");
-    return false;
-  }
-
-  // check if got dq_gain
-  if (!node_handle.getParam("dq_gain", dq_gain)) {
-    ROS_ERROR_STREAM("JointPDController: Could not read parameter dq_gain");
-    return false;
-  }
-
-  return true;
 }
 
 }  // namespace fr3_ros
