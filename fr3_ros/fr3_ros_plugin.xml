@@ -14,4 +14,9 @@
       A QP-based controller testing purpose using Pinocchio and ProxSuite.
     </description>
   </class>
+  <class name="fr3_ros/WaypointController" type="fr3_ros::WaypointController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A QP-based controller testing purpose using Pinocchio and ProxSuite.
+    </description>
+  </class>
 </library>
