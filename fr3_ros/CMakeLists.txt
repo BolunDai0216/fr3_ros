@@ -37,9 +37,10 @@ endif()
 
 add_message_files(FILES
   JointTorqueComparison.msg
+  controlLogs.msg
 )
 
-generate_messages()
+generate_messages( DEPENDENCIES std_msgs)
 
 generate_dynamic_reconfigure_options(
   cfg/compliance_param.cfg

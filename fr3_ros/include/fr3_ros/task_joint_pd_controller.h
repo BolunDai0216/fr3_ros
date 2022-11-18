@@ -28,6 +28,8 @@
 #include <franka_hw/franka_state_interface.h>
 #include <franka_hw/trigger_rate.h>
 
+#include <fr3_ros/pinocchio_utils.h>
+#include <fr3_ros/controller_utils.h>
 namespace fr3_ros {
 
 class TaskJointPDController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
@@ -40,6 +42,10 @@ class TaskJointPDController : public controller_interface::MultiInterfaceControl
   void stopping(const ros::Time&) override;
 
  private:
+  //publisher object for the log messages
+  ros::Publisher control_log_publisher;
+  LogDataType logData;
+
   // pinocchio model & data
   pinocchio::Model model;
   pinocchio::Data data;
