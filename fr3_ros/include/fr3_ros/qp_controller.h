@@ -99,12 +99,12 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   double amplitude = 0.3;
 
   // define QP parameters
-  proxsuite::proxqp::isize dim = 14;
+  proxsuite::proxqp::isize dim = 7;
   proxsuite::proxqp::isize n_eq = 0;
   proxsuite::proxqp::isize n_in = 0;
 
-  Eigen::Matrix<double, 14, 14> qp_H;
-  Eigen::Matrix<double, 14, 1> qp_g;
+  Eigen::Matrix<double, 7, 7> qp_H;
+  Eigen::Matrix<double, 7, 1> qp_g;
   Eigen::Matrix<double, 7, 1> q_nominal;
   Eigen::Matrix<double, 7, 1> ddq_nominal;
 

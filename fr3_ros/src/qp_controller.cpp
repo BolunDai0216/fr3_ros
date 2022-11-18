@@ -168,7 +168,7 @@ void QPController::starting(const ros::Time& /* time */) {
 
 void QPController::update(const ros::Time& /*time*/, const ros::Duration& period) {
   static ps::dense::QP<double> qp(dim, n_eq, n_in);
-  
+
   // update controller clock
   controlller_clock += period.toSec();
 
@@ -211,18 +211,13 @@ void QPController::update(const ros::Time& /*time*/, const ros::Duration& period
   // compute pseudo-inverse of Jacobian
   franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
 
-  // compute joint target
-  delta_q_target = pinv_jacobian * P_error;
-
   // compute joint torque
-  Jddq_desired = ddP_cmd + tKp * dP_target + tKd * (dP_target - jacobian * dq) - djacobian * dq;
+  Jddq_desired = ddP_cmd + tKp * P_error + tKd * (dP_target - jacobian * dq) - djacobian * dq;
   proj_mat = Eigen::MatrixXd::Identity(7, 7) - pinv_jacobian * jacobian;
   ddq_nominal = Kp * (q_nominal - q) - Kd * dq;
 
-  qp_H.topLeftCorner(7, 7) = 2 * (jacobian.transpose() * jacobian + proj_mat.transpose() * proj_mat);
-  qp_g.topLeftCorner(7, 1) = -2 * (Jddq_desired.transpose() * jacobian + ddq_nominal.transpose() * proj_mat.transpose() * proj_mat).transpose();
-
-  // ps::dense::QP<double> qp(dim, n_eq, n_in);
+  qp_H = 2 * (jacobian.transpose() * jacobian + proj_mat.transpose() * proj_mat);
+  qp_g = -2 * (Jddq_desired.transpose() * jacobian + ddq_nominal.transpose() * proj_mat.transpose() * proj_mat).transpose();
 
   if (qp_initialized) {
     qp.update(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
