@@ -62,4 +62,13 @@ Eigen::Matrix<double, 7, 1> saturateTorqueRate(const Eigen::Matrix<double, 7, 1>
   return tau_d_saturated;
 }
 
+Eigen::Vector3d computeRotVecError(const Eigen::Matrix<double, 3, 3>& R_target,
+                                   const Eigen::Matrix<double, 3, 3>& R_measured) {
+  Eigen::Matrix<double, 3, 3> R_error = R_target * R_measured.transpose();
+  Eigen::AngleAxisd AngleAxisErr(R_error);
+  Eigen::Vector3d rotvec_err = AngleAxisErr.axis() * AngleAxisErr.angle();
+
+  return rotvec_err;
+}
+
 }

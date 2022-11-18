@@ -7,10 +7,10 @@
 #include <Eigen/Dense>
 #include "fr3_ros/controlLogs.h"
 #include "ros/ros.h"
+
 namespace fr3_ros {
 
 struct LogDataType{
-
   Eigen::Matrix<double, 7, 1>  q;
   Eigen::Matrix<double, 7, 1> q_dot;
   Eigen::Matrix<double, 7, 1> q_des;
@@ -32,6 +32,9 @@ void publishLogMsgs(LogDataType *data, ros::Publisher *pub);
 
 Eigen::Matrix<double, 7, 1> saturateTorqueRate(const Eigen::Matrix<double, 7, 1>& tau_d_calculated,
                                                const Eigen::Matrix<double, 7, 1>& tau_J_d);
+                                  
+Eigen::Vector3d computeRotVecError(const Eigen::Matrix<double, 3, 3>& R_target,
+                                   const Eigen::Matrix<double, 3, 3>& R_measured);
 
 inline void readJointPDGains(std::vector<double>& k_gains_,
                       std::vector<double>& d_gains_,

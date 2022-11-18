@@ -43,6 +43,10 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   void stopping(const ros::Time&) override;
 
  private:
+  void computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
+                               const Eigen::Matrix<double, 7, 1>& dq,
+                               const Eigen::Matrix<double, 7, 6>& pinv_jacobian);
+
   // pinocchio model & data
   pinocchio::Model model;
   pinocchio::Data data;
@@ -73,6 +77,10 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   Eigen::Matrix<double, 6, 1> dP_target;
   Eigen::Matrix<double, 6, 1> ddP_cmd;
 
+  // errors at each time step
+  Eigen::Matrix<double, 6, 1> P_error;
+  Eigen::Vector3d rotvec_err;
+
   // measured end-effector configuration
   Eigen::Matrix<double, 3, 1> p_measured;
   Eigen::Matrix<double, 3, 3> R_measured;
@@ -99,12 +107,15 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   double amplitude = 0.3;
 
   // define QP parameters
-  proxsuite::proxqp::isize dim = 7;
-  proxsuite::proxqp::isize n_eq = 0;
+  proxsuite::proxqp::isize dim = 14;
+  proxsuite::proxqp::isize n_eq = 7;
   proxsuite::proxqp::isize n_in = 0;
 
-  Eigen::Matrix<double, 7, 7> qp_H;
-  Eigen::Matrix<double, 7, 1> qp_g;
+  Eigen::Matrix<double, 14, 14> qp_H;
+  Eigen::Matrix<double, 14, 1> qp_g;
+  Eigen::Matrix<double, 7, 14> qp_A;
+  Eigen::Matrix<double, 7, 1> qp_b;
+
   Eigen::Matrix<double, 7, 1> q_nominal;
   Eigen::Matrix<double, 7, 1> ddq_nominal;
 

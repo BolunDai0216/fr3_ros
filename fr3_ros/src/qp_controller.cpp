@@ -160,6 +160,12 @@ void QPController::starting(const ros::Time& /* time */) {
   dP_target << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
   ddP_cmd << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
+  // initialize qp parameters with zero
+  qp_H = Eigen::MatrixXd::Zero(14, 14);
+  qp_g = Eigen::MatrixXd::Zero(14, 1);
+  qp_A = Eigen::MatrixXd::Zero(7, 14);
+  qp_b = Eigen::MatrixXd::Zero(7, 1);
+
   q_nominal = q_init;
 
   // get Kp and Kd gains
@@ -194,50 +200,36 @@ void QPController::update(const ros::Time& /*time*/, const ros::Duration& period
   // get time derivative of positional Jacobian
   pin::getFrameJacobianTimeVariation(model, data, ee_frame_id, pin::LOCAL_WORLD_ALIGNED, djacobian);
 
-  // compute orientation error with targets
-  Eigen::Matrix<double, 3, 3> R_error = R_target * R_measured.transpose();
-  Eigen::AngleAxisd AngleAxisErr(R_error);
-  Eigen::Vector3d rotvec_err = AngleAxisErr.axis() * AngleAxisErr.angle();
+  // compute orientation error
+  rotvec_err = computeRotVecError(R_target, R_measured);
 
-  // compute new p_target along the y-axis
+  // compute new p_target, dP_target, ddP_cmd along the y-axis
   p_target[1] = std::sin(M_PI * controlller_clock / half_period) * amplitude;
-
-  // compute new dP_target along the y-axis
   dP_target[1] = (M_PI / half_period) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
-
-  // compute new ddP_cmd along the y-axis
   ddP_cmd[1] = (M_PI * M_PI / (half_period * half_period)) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
 
   // compute positional error
-  Eigen::Matrix<double, 6, 1> P_error;
   P_error << p_target - p_measured, rotvec_err;
 
   // compute pseudo-inverse of Jacobian
   franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
 
-  // compute joint torque
-  Jddq_desired = ddP_cmd + tKp * P_error + tKd * (dP_target - jacobian * dq) - djacobian * dq;
-  proj_mat = Eigen::MatrixXd::Identity(7, 7) - pinv_jacobian * jacobian;
-  ddq_nominal = Kp * (q_nominal - q) - Kd * dq;
-
-  qp_H = 2 * (jacobian.transpose() * jacobian + epsilon * proj_mat.transpose() * proj_mat);
-  qp_g = -2 * (Jddq_desired.transpose() * jacobian + epsilon * ddq_nominal.transpose() * proj_mat.transpose() * proj_mat).transpose();
-
-  if (qp_initialized) {
-    qp.update(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
-  } else {
-    qp.init(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
-    qp_initialized = true;
-  }
-  qp.solve();
-
-  auto sol_ddq = qp.results.x.topLeftCorner(7, 1);
-  auto sol_torque = qp.results.x.bottomLeftCorner(7, 1);
+  // get H, g, A, b
+  computeSolverParameters(q, dq, pinv_jacobian);
 
   // get M, h, g
   getDynamicsParameter(model, data, q, dq);
 
-  torques = data.M * sol_ddq + (data.nle - data.g);
+  // solve qp
+  if (qp_initialized) {
+    qp.update(qp_H, qp_g, qp_A, qp_b, std::nullopt, std::nullopt, std::nullopt);
+  } else {
+    qp.init(qp_H, qp_g, qp_A, qp_b, std::nullopt, std::nullopt, std::nullopt);
+    qp_initialized = true;
+  }
+  qp.solve();
+
+  torques = qp.results.x.bottomLeftCorner(7, 1);
 
   // Saturate torque rate to avoid discontinuities
   torques << saturateTorqueRate(torques, tau_J_d);
@@ -252,6 +244,19 @@ void QPController::stopping(const ros::Time& /*time*/) {
   // WARNING: DO NOT SEND ZERO VELOCITIES HERE AS IN CASE OF ABORTING DURING MOTION
   // A JUMP TO ZERO WILL BE COMMANDED PUTTING HIGH LOADS ON THE ROBOT. LET THE DEFAULT
   // BUILT-IN STOPPING BEHAVIOR SLOW DOWN THE ROBOT.
+}
+
+void QPController::computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
+                                           const Eigen::Matrix<double, 7, 1>& dq,
+                                           const Eigen::Matrix<double, 7, 6>& pinv_jacobian) {
+  Jddq_desired = ddP_cmd + tKp * P_error + tKd * (dP_target - jacobian * dq) - djacobian * dq;
+  proj_mat = Eigen::MatrixXd::Identity(7, 7) - pinv_jacobian * jacobian;
+  ddq_nominal = Kp * (q_nominal - q) - Kd * dq;
+
+  qp_H.topLeftCorner(7, 7) = 2 * (jacobian.transpose() * jacobian + epsilon * proj_mat.transpose() * proj_mat);
+  qp_g.topLeftCorner(7, 1) = -2 * (Jddq_desired.transpose() * jacobian + epsilon * ddq_nominal.transpose() * proj_mat.transpose() * proj_mat).transpose();
+  qp_A << data.M, -Eigen::MatrixXd::Identity(7, 7);
+  qp_b << -(data.nle - data.g);
 }
 
 }  // namespace fr3_ros
