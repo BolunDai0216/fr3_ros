@@ -9,4 +9,9 @@
       A task space controller using joint-space PD control for testing purpose using Pinocchio.
     </description>
   </class>
+  <class name="fr3_ros/QPController" type="fr3_ros::QPController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A QP-based controller testing purpose using Pinocchio and ProxSuite.
+    </description>
+  </class>
 </library>

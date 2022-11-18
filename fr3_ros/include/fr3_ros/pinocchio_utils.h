@@ -42,7 +42,8 @@ inline void updatePinocchioModel(pinocchio::Model& model,
   // update pinocchio robot model
   pin::forwardKinematics(model, data, q, dq);
   pin::computeJointJacobians(model, data, q); 
-  pin::updateFramePlacements(model, data);                             
+  pin::updateFramePlacements(model, data);   
+  pin::computeJointJacobiansTimeVariation(model, data, q, dq);                           
 }
 
 }  // namespace fr3_ros
