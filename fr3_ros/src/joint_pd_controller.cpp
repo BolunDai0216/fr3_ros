@@ -116,6 +116,8 @@ bool JointPDController::init(hardware_interface::RobotHW* robot_hw,
   // build pin_robot from urdf
   pin::urdf::buildModel(urdf_filename, model);
   data = pin::Data(model);
+  //Register the control log topic
+  control_log_publisher = registerLogPublisher(node_handle);
 
   return true;
 }
@@ -198,8 +200,10 @@ void JointPDController::update(const ros::Time& /*time*/, const ros::Duration& p
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(torques[i]);
   }
+  //publish the control log messages
+  publishLogMsgs(&logData, &control_log_publisher);
 }
-
+//publish the log data
 }  // namespace fr3_ros
 
 PLUGINLIB_EXPORT_CLASS(fr3_ros::JointPDController, controller_interface::ControllerBase)

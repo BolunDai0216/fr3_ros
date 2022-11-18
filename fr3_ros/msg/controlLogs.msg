@@ -1,0 +1,14 @@
+Header header
+float64[] q
+float64[] q_dot
+float64[] q_des
+float64[] q_dot_des
+float64[] M
+float64[] C
+float64[] G
+float64[] J
+float64[] J_dot
+float64[] J_aux
+float64[] M_aux
+float64[] torque_cmd
+

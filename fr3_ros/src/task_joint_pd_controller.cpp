@@ -1,8 +1,7 @@
 #include <fr3_ros/task_joint_pd_controller.h>
 #include <franka/robot_state.h>
 #include <franka_example_controllers/pseudo_inversion.h>
-#include <fr3_ros/pinocchio_utils.h>
-#include <fr3_ros/controller_utils.h>
+
 
 #include <cmath>
 #include <optional>
@@ -117,6 +116,8 @@ bool TaskJointPDController::init(hardware_interface::RobotHW* robot_hw,
   pin::urdf::buildModel(urdf_filename, model);
   data = pin::Data(model);
 
+  control_log_publisher = registerLogPublisher(node_handle);
+
   return true;
 }
 
@@ -196,16 +197,21 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
 
   // get M, h, g
   getDynamicsParameter(model, data, q, dq);
+  logData.M = data.M;
+  logData.C = data.C;
 
   torques = data.M * ddq_cmd + (data.nle - data.g);
 
   // Saturate torque rate to avoid discontinuities
   torques << saturateTorqueRate(torques, tau_J_d);
-
+  
   // set torque
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(torques[i]);
   }
+  logData.torque_cmd = torques;
+  //publish the log data
+  publishLogMsgs(&logData, &control_log_publisher);
 }
 
 void TaskJointPDController::stopping(const ros::Time& /*time*/) {
