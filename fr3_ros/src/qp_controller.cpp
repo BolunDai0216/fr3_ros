@@ -125,9 +125,13 @@ bool QPController::init(hardware_interface::RobotHW* robot_hw,
     return false;
   }
   
-  std::string urdf_filename;
   if (!node_handle.getParam("urdf_filename", urdf_filename)) {
     ROS_ERROR_STREAM("QPController: Could not read parameter urdf_filename");
+    return false;
+  }
+
+  if (!node_handle.getParam("epsilon", epsilon)) {
+    ROS_ERROR_STREAM("QPController: Could not read parameter epsilon");
     return false;
   }
 
@@ -216,8 +220,8 @@ void QPController::update(const ros::Time& /*time*/, const ros::Duration& period
   proj_mat = Eigen::MatrixXd::Identity(7, 7) - pinv_jacobian * jacobian;
   ddq_nominal = Kp * (q_nominal - q) - Kd * dq;
 
-  qp_H = 2 * (jacobian.transpose() * jacobian + proj_mat.transpose() * proj_mat);
-  qp_g = -2 * (Jddq_desired.transpose() * jacobian + ddq_nominal.transpose() * proj_mat.transpose() * proj_mat).transpose();
+  qp_H = 2 * (jacobian.transpose() * jacobian + epsilon * proj_mat.transpose() * proj_mat);
+  qp_g = -2 * (Jddq_desired.transpose() * jacobian + epsilon * ddq_nominal.transpose() * proj_mat.transpose() * proj_mat).transpose();
 
   if (qp_initialized) {
     qp.update(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);

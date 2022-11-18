@@ -110,6 +110,10 @@ class QPController : public controller_interface::MultiInterfaceController<frank
 
   Eigen::Matrix<double, 6, 1> Jddq_desired;
   Eigen::Matrix<double, 7, 7> proj_mat;
+  
+  double epsilon;
+  std::string urdf_filename;
+  
   bool qp_initialized = false;
 };
 
