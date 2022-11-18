@@ -2,13 +2,11 @@
 
 namespace fr3_ros { 
 
-ros::Publisher registerLogPublisher(ros::NodeHandle& node_handle)
-{
+ros::Publisher registerLogPublisher(ros::NodeHandle& node_handle) {
   return node_handle.advertise<fr3_ros::controlLogs>("control_logs", 1);
 }
 
-void publishLogMsgs(LogDataType *data, ros::Publisher *pub)
-{  
+void publishLogMsgs(LogDataType *data, ros::Publisher *pub) {  
   fr3_ros::controlLogs log_msg;
   
   for(int i=0; i<7; i++)
