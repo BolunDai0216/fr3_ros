@@ -23,7 +23,6 @@
 #include <ros/time.h>
 #include <Eigen/Dense>
 
-#include <franka_hw/franka_cartesian_command_interface.h>
 #include <franka_hw/franka_model_interface.h>
 #include <franka_hw/franka_state_interface.h>
 #include <franka_hw/trigger_rate.h>

@@ -23,13 +23,13 @@
 #include <ros/time.h>
 #include <Eigen/Dense>
 
-#include <franka_hw/franka_cartesian_command_interface.h>
 #include <franka_hw/franka_model_interface.h>
 #include <franka_hw/franka_state_interface.h>
 #include <franka_hw/trigger_rate.h>
 
 #include <fr3_ros/pinocchio_utils.h>
 #include <fr3_ros/controller_utils.h>
+
 namespace fr3_ros {
 
 class TaskJointPDController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
