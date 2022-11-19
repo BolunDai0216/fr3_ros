@@ -17,7 +17,6 @@
 #include <proxsuite/proxqp/utils/random_qp_problems.hpp>
 
 namespace pin = pinocchio;
-namespace ps = proxsuite::proxqp;
 
 namespace fr3_ros {
 
@@ -177,8 +176,6 @@ void QPController::starting(const ros::Time& /* time */) {
 }
 
 void QPController::update(const ros::Time& /*time*/, const ros::Duration& period) {
-  static ps::dense::QP<double> qp(dim, n_eq, n_in);
-
   // update controller clock
   controlller_clock += period.toSec();
 

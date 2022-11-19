@@ -29,7 +29,6 @@
 #include <franka_hw/trigger_rate.h>
 
 #include <proxsuite/proxqp/dense/dense.hpp>
-#include <proxsuite/proxqp/utils/random_qp_problems.hpp>
 
 namespace fr3_ros {
 
@@ -41,6 +40,15 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   void starting(const ros::Time&) override;
   void update(const ros::Time&, const ros::Duration& period) override;
   void stopping(const ros::Time&) override;
+
+  // define QP parameters
+  proxsuite::proxqp::isize dim;
+  proxsuite::proxqp::isize n_eq;
+  proxsuite::proxqp::isize n_in;
+  proxsuite::proxqp::dense::QP<double> qp;
+
+  // define constructor and member initialization list
+  QPController() : dim(14), n_eq(7), n_in(0), qp(dim, n_eq, n_in) {};
 
  private:
   void computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
@@ -107,10 +115,6 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   double amplitude = 0.3;
 
   // define QP parameters
-  proxsuite::proxqp::isize dim = 14;
-  proxsuite::proxqp::isize n_eq = 7;
-  proxsuite::proxqp::isize n_in = 0;
-
   Eigen::Matrix<double, 14, 14> qp_H;
   Eigen::Matrix<double, 14, 1> qp_g;
   Eigen::Matrix<double, 7, 14> qp_A;

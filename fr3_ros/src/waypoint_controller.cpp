@@ -17,7 +17,6 @@
 #include <proxsuite/proxqp/utils/random_qp_problems.hpp>
 
 namespace pin = pinocchio;
-namespace ps = proxsuite::proxqp;
 
 namespace fr3_ros {
 
@@ -177,7 +176,6 @@ void WaypointController::starting(const ros::Time& /* time */) {
 }
 
 void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& period) {
-  static ps::dense::QP<double> qp(dim, n_eq, n_in);
 
   // update controller clock
   controlller_clock += period.toSec();
@@ -238,6 +236,8 @@ void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& 
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(torques[i]);
   }
+
+  ROS_INFO_STREAM("p_measured: " << p_measured.transpose());
 }
 
 void WaypointController::stopping(const ros::Time& /*time*/) {
@@ -247,8 +247,8 @@ void WaypointController::stopping(const ros::Time& /*time*/) {
 }
 
 void WaypointController::computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
-                                           const Eigen::Matrix<double, 7, 1>& dq,
-                                           const Eigen::Matrix<double, 7, 6>& pinv_jacobian) {
+                                                 const Eigen::Matrix<double, 7, 1>& dq,
+                                                 const Eigen::Matrix<double, 7, 6>& pinv_jacobian) {
   Jddq_desired = ddP_cmd + tKp * P_error + tKd * (dP_target - jacobian * dq) - djacobian * dq;
   proj_mat = Eigen::MatrixXd::Identity(7, 7) - pinv_jacobian * jacobian;
   ddq_nominal = Kp * (q_nominal - q) - Kd * dq;
