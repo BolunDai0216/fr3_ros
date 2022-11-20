@@ -203,7 +203,7 @@ void QPController::update(const ros::Time& /*time*/, const ros::Duration& period
   // compute new p_target, dP_target, ddP_cmd along the y-axis
   p_target[1] = std::sin(M_PI * controlller_clock / half_period) * amplitude;
   dP_target[1] = (M_PI / half_period) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
-  ddP_cmd[1] = (M_PI * M_PI / (half_period * half_period)) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
+  ddP_cmd[1] = -(M_PI * M_PI / (half_period * half_period)) * std::sin(M_PI * controlller_clock / half_period) * amplitude;
 
   // compute positional error
   P_error << p_target - p_measured, rotvec_err;
