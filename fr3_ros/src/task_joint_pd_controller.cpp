@@ -180,7 +180,7 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
   dP_target[1] = (M_PI / half_period) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
 
   // compute new ddP_cmd along the y-axis
-  ddP_cmd[1] = (M_PI * M_PI / (half_period * half_period)) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
+  ddP_cmd[1] = -(M_PI * M_PI / (half_period * half_period)) * std::sin(M_PI * controlller_clock / half_period) * amplitude;
 
   // compute positional error
   Eigen::Matrix<double, 6, 1> P_error;
