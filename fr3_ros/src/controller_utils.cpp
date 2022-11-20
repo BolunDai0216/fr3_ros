@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include <fr3_ros/controller_utils.h>
 
 namespace fr3_ros { 
@@ -71,4 +73,27 @@ Eigen::Vector3d computeRotVecError(const Eigen::Matrix<double, 3, 3>& R_target,
   return rotvec_err;
 }
 
+std::tuple<double, double, double> getAlphas(const double& t, const double& T) {
+  double alpha, dalpha, ddalpha;
+
+  if (t <= T){
+    double sin_ = std::sin(M_PI * t / T);
+    double cos_ = std::cos(M_PI * t / T);
+    double beta = (M_PI / 4) * (1 - cos_);
+    double _sin = std::sin(beta);
+    double _cos = std::cos(beta);
+    double T2 = T * T;
+
+    alpha = _sin;
+    dalpha = (M_PI * M_PI / (4 * T)) * _cos * sin_;
+    ddalpha = (std::pow(M_PI, 3) / (4 * T2)) * cos_ * _cos - (std::pow(M_PI, 4) / (16 * T2)) * sin_ * sin_ * _sin;
+  } else {
+    alpha = 1.0;
+    dalpha = 0.0;
+    ddalpha = 0.0;
+  }
+
+  return {alpha, dalpha, ddalpha};
 }
+
+}  // namespace fr3_ros

@@ -128,6 +128,8 @@ class WaypointController : public controller_interface::MultiInterfaceController
   std::string urdf_filename;
   
   bool qp_initialized = false;
+
+  std::array<Eigen::Matrix<double, 3, 1>, 3> waypoints;
 };
 
 }  // namespace fr3_ros

@@ -21,7 +21,7 @@ namespace pin = pinocchio;
 namespace fr3_ros {
 
 bool WaypointController::init(hardware_interface::RobotHW* robot_hw,
-                                 ros::NodeHandle& node_handle) {
+                              ros::NodeHandle& node_handle) {
   // check if got arm_id
   std::string arm_id;
   if (!node_handle.getParam("arm_id", arm_id)) {
@@ -173,6 +173,14 @@ void WaypointController::starting(const ros::Time& /* time */) {
   
   // initialize clock
   controlller_clock = 0.0;
+
+  waypoints[0] << 0.3, 0.0, 0.5;
+  waypoints[1] << 0.3, 0.4, 0.2;
+  waypoints[2] << 0.3, -0.4, 0.2;
+
+  ROS_INFO_STREAM(waypoints[0].transpose());
+  ROS_INFO_STREAM(waypoints[1].transpose());
+  ROS_INFO_STREAM(waypoints[2].transpose());
 }
 
 void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& period) {
@@ -200,6 +208,9 @@ void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& 
 
   // compute orientation error
   rotvec_err = computeRotVecError(R_target, R_measured);
+
+  // compute α, dα, ddα
+  auto [alpha, dalpha, ddalpha] = getAlphas(controlller_clock, 30.0);
 
   // compute new p_target, dP_target, ddP_cmd along the y-axis
   p_target[1] = std::sin(M_PI * controlller_clock / half_period) * amplitude;

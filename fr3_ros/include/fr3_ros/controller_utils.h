@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <tuple>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -35,11 +36,13 @@ Eigen::Matrix<double, 7, 1> saturateTorqueRate(const Eigen::Matrix<double, 7, 1>
                                   
 Eigen::Vector3d computeRotVecError(const Eigen::Matrix<double, 3, 3>& R_target,
                                    const Eigen::Matrix<double, 3, 3>& R_measured);
+                            
+std::tuple<double, double, double> getAlphas(const double& t, const double& T); 
 
 inline void readJointPDGains(std::vector<double>& k_gains_,
-                      std::vector<double>& d_gains_,
-                      Eigen::Matrix<double, 7, 7>& Kp,
-                      Eigen::Matrix<double, 7, 7>& Kd) {
+                             std::vector<double>& d_gains_,
+                             Eigen::Matrix<double, 7, 7>& Kp,
+                             Eigen::Matrix<double, 7, 7>& Kd) {
   Eigen::Map<Eigen::Matrix<double, 7, 1>> k_gains_array(k_gains_.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> d_gains_array(d_gains_.data());
 
@@ -48,9 +51,9 @@ inline void readJointPDGains(std::vector<double>& k_gains_,
 }
 
 inline void readTaskPDGains(std::vector<double>& k_gains_,
-                     std::vector<double>& d_gains_,
-                     Eigen::Matrix<double, 6, 6>& Kp,
-                     Eigen::Matrix<double, 6, 6>& Kd) {
+                            std::vector<double>& d_gains_,
+                            Eigen::Matrix<double, 6, 6>& Kp,
+                            Eigen::Matrix<double, 6, 6>& Kd) {
   Eigen::Map<Eigen::Matrix<double, 6, 1>> k_gains_array(k_gains_.data());
   Eigen::Map<Eigen::Matrix<double, 6, 1>> d_gains_array(d_gains_.data());
 
