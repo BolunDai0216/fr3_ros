@@ -154,7 +154,7 @@ void WaypointController::starting(const ros::Time& /* time */) {
   ee_frame_id = model.getFrameId("fr3_hand_tcp");
 
   // define duration of each trajctory segment
-  traj_duration = 5.0;
+  traj_duration = 10.0;
 
   // get current end-effector position and orientation
   p_start = data.oMf[ee_frame_id].translation();
