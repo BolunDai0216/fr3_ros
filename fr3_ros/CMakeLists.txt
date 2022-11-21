@@ -80,6 +80,7 @@ add_library(fr3_ros
   src/qp_controller.cpp
   src/waypoint_controller.cpp
   src/waypoint_cbf_controller.cpp
+  src/cbf_controller.cpp
   src/controller_utils.cpp
   src/cbf_utils.cpp
 )

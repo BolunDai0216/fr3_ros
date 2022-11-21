@@ -24,4 +24,9 @@
       A CBFQP-based controller testing purpose using Pinocchio and ProxSuite.
     </description>
   </class>
+  <class name="fr3_ros/CBFController" type="fr3_ros::CBFController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A CBFQP-based controller testing purpose using Pinocchio and ProxSuite.
+    </description>
+  </class>
 </library>

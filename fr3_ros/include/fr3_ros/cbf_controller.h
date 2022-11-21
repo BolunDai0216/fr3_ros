@@ -31,7 +31,7 @@
 
 namespace fr3_ros {
 
-class WaypointCBFController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
+class CBFController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
                                                                                  hardware_interface::EffortJointInterface, 
                                                                                  franka_hw::FrankaStateInterface> {
  public:
@@ -47,7 +47,7 @@ class WaypointCBFController : public controller_interface::MultiInterfaceControl
   proxsuite::proxqp::dense::QP<double> qp;
 
   // define constructor and member initialization list
-  WaypointCBFController() : dim(14), n_eq(7), n_in(0), qp(dim, n_eq, n_in) {};
+  CBFController() : dim(14), n_eq(7), n_in(0), qp(dim, n_eq, n_in) {};
 
  private:
   void computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
@@ -141,11 +141,6 @@ class WaypointCBFController : public controller_interface::MultiInterfaceControl
   Eigen::Matrix<double, 7, 7> proj_mat;
   double epsilon;
   bool qp_initialized = false;
-
-  // CBF constraint parameters
-  Eigen::Matrix<double, 14, 1> F_mat;
-  Eigen::Matrix<double, 14, 7> G_mat;
-  Eigen::Matrix<double, 3, 1> normalVec;
 
   // define trajectory
   std::array<Eigen::Matrix<double, 3, 1>, 3> waypoints;
