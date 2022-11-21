@@ -17,8 +17,8 @@ namespace pin = pinocchio;
 namespace fr3_ros {
 
 /**
- * @brief This function computes M(q), C(q, dq) + G(q), and G(q) using measurements from FR3. 
- *        The computed M(q), C(q, dq) + G(q), and G(q) are stored in data.M, data.nle, data.g.         
+ * @brief This function computes M(q), M^{-1}(q), C(q, dq) + G(q), and G(q) using measurements from FR3. 
+ *        The computed M(q), M^{-1}(q), C(q, dq) + G(q), and G(q) are stored in data.M, data.Minv, data.nle, data.g.         
  *
  * @param model : Pinocchio robot model.
  * @param data  : Pinocchio robot data.
@@ -40,6 +40,9 @@ inline void getDynamicsParameter(pinocchio::Model& model,
 
   // compute G
   pin::computeGeneralizedGravity(model, data, q);
+
+  // compute M^{-1}
+  pin::computeMinverse(model, data, q);
 }
 
 /**

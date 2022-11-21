@@ -1,4 +1,4 @@
-#include <fr3_ros/waypoint_controller.h>
+#include <fr3_ros/waypoint_cbf_controller.h>
 #include <franka/robot_state.h>
 #include <franka_example_controllers/pseudo_inversion.h>
 #include <fr3_ros/pinocchio_utils.h>
@@ -20,22 +20,22 @@ namespace pin = pinocchio;
 
 namespace fr3_ros {
 
-bool WaypointController::init(hardware_interface::RobotHW* robot_hw,
+bool WaypointCBFController::init(hardware_interface::RobotHW* robot_hw,
                               ros::NodeHandle& node_handle) {
   // check if got arm_id
   std::string arm_id;
   if (!node_handle.getParam("arm_id", arm_id)) {
-    ROS_ERROR_STREAM("WaypointController: Could not read parameter arm_id");
+    ROS_ERROR_STREAM("WaypointCBFController: Could not read parameter arm_id");
     return false;
   }
   
   // check if got joint_names
   std::vector<std::string> joint_names;
   if (!node_handle.getParam("joint_names", joint_names)) {
-    ROS_ERROR("WaypointController: Could not parse joint names");
+    ROS_ERROR("WaypointCBFController: Could not parse joint names");
   }
   if (joint_names.size() != 7) {
-    ROS_ERROR_STREAM("WaypointController: Wrong number of joint names, got " << joint_names.size() << " instead of 7 names!");
+    ROS_ERROR_STREAM("WaypointCBFController: Wrong number of joint names, got " << joint_names.size() << " instead of 7 names!");
     return false;
   }
   
@@ -44,7 +44,7 @@ bool WaypointController::init(hardware_interface::RobotHW* robot_hw,
   
   if (model_interface == nullptr) {
     ROS_ERROR_STREAM(
-        "WaypointController: Error getting model interface from hardware");
+        "WaypointCBFController: Error getting model interface from hardware");
     return false;
   }
 
@@ -53,7 +53,7 @@ bool WaypointController::init(hardware_interface::RobotHW* robot_hw,
         model_interface->getHandle(arm_id + "_model"));
   } catch (hardware_interface::HardwareInterfaceException& ex) {
     ROS_ERROR_STREAM(
-        "WaypointController: Exception getting model handle from interface: "
+        "WaypointCBFController: Exception getting model handle from interface: "
         << ex.what());
     return false;
   }
@@ -63,7 +63,7 @@ bool WaypointController::init(hardware_interface::RobotHW* robot_hw,
   
   if (state_interface == nullptr) {
     ROS_ERROR_STREAM(
-        "WaypointController: Error getting state interface from hardware");
+        "WaypointCBFController: Error getting state interface from hardware");
     return false;
   }
   
@@ -72,7 +72,7 @@ bool WaypointController::init(hardware_interface::RobotHW* robot_hw,
         state_interface->getHandle(arm_id + "_robot"));
   } catch (hardware_interface::HardwareInterfaceException& ex) {
     ROS_ERROR_STREAM(
-        "WaypointController: Exception getting state handle from interface: "
+        "WaypointCBFController: Exception getting state handle from interface: "
         << ex.what());
     return false;
   }
@@ -82,7 +82,7 @@ bool WaypointController::init(hardware_interface::RobotHW* robot_hw,
   
   if (effort_joint_interface == nullptr) {
     ROS_ERROR_STREAM(
-        "WaypointController: Error getting effort joint interface from hardware");
+        "WaypointCBFController: Error getting effort joint interface from hardware");
     return false;
   }
   
@@ -91,46 +91,46 @@ bool WaypointController::init(hardware_interface::RobotHW* robot_hw,
       joint_handles_.push_back(effort_joint_interface->getHandle(joint_names[i]));
     } catch (const hardware_interface::HardwareInterfaceException& ex) {
       ROS_ERROR_STREAM(
-          "WaypointController: Exception getting joint handles: " << ex.what());
+          "WaypointCBFController: Exception getting joint handles: " << ex.what());
       return false;
     }
   }
 
   if (!node_handle.getParam("k_gains", k_gains_) || k_gains_.size() != 7) {
     ROS_ERROR(
-        "WaypointController:  Invalid or no k_gain parameters provided, aborting "
+        "WaypointCBFController:  Invalid or no k_gain parameters provided, aborting "
         "controller init!");
     return false;
   }
 
   if (!node_handle.getParam("d_gains", d_gains_) || d_gains_.size() != 7) {
     ROS_ERROR(
-        "WaypointController:  Invalid or no d_gain parameters provided, aborting "
+        "WaypointCBFController:  Invalid or no d_gain parameters provided, aborting "
         "controller init!");
     return false;
   }
 
   if (!node_handle.getParam("tk_gains", tk_gains_) || tk_gains_.size() != 6) {
     ROS_ERROR(
-        "WaypointController:  Invalid or no tk_gain parameters provided, aborting "
+        "WaypointCBFController:  Invalid or no tk_gain parameters provided, aborting "
         "controller init!");
     return false;
   }
 
   if (!node_handle.getParam("td_gains", td_gains_) || td_gains_.size() != 6) {
     ROS_ERROR(
-        "WaypointController:  Invalid or no td_gain parameters provided, aborting "
+        "WaypointCBFController:  Invalid or no td_gain parameters provided, aborting "
         "controller init!");
     return false;
   }
   
   if (!node_handle.getParam("urdf_filename", urdf_filename)) {
-    ROS_ERROR_STREAM("WaypointController: Could not read parameter urdf_filename");
+    ROS_ERROR_STREAM("WaypointCBFController: Could not read parameter urdf_filename");
     return false;
   }
 
   if (!node_handle.getParam("epsilon", epsilon)) {
-    ROS_ERROR_STREAM("WaypointController: Could not read parameter epsilon");
+    ROS_ERROR_STREAM("WaypointCBFController: Could not read parameter epsilon");
     return false;
   }
 
@@ -141,7 +141,7 @@ bool WaypointController::init(hardware_interface::RobotHW* robot_hw,
   return true;
 }
 
-void WaypointController::starting(const ros::Time& /* time */) {
+void WaypointCBFController::starting(const ros::Time& /* time */) {
   // get intial robot state
   franka::RobotState initial_state = state_handle_->getRobotState();
   Eigen::Map<Eigen::Matrix<double, 7, 1>> q_init(initial_state.q.data());
@@ -191,7 +191,7 @@ void WaypointController::starting(const ros::Time& /* time */) {
   controlller_clock = 0.0;
 }
 
-void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& period) {
+void WaypointCBFController::update(const ros::Time& /*time*/, const ros::Duration& period) {
   // update controller clock
   controlller_clock += period.toSec();
 
@@ -253,28 +253,34 @@ void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& 
   }
 }
 
-void WaypointController::stopping(const ros::Time& /*time*/) {
+void WaypointCBFController::stopping(const ros::Time& /*time*/) {
   // WARNING: DO NOT SEND ZERO VELOCITIES HERE AS IN CASE OF ABORTING DURING MOTION
   // A JUMP TO ZERO WILL BE COMMANDED PUTTING HIGH LOADS ON THE ROBOT. LET THE DEFAULT
   // BUILT-IN STOPPING BEHAVIOR SLOW DOWN THE ROBOT.
 }
 
-void WaypointController::computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
+void WaypointCBFController::computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
                                                  const Eigen::Matrix<double, 7, 1>& dq) {
   // compute pseudo-inverse of Jacobian
   franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
-                                                
+
+  // compute cost parameters                                   
   Jddq_desired = ddP_cmd + tKp * P_error + tKd * (dP_target - jacobian * dq) - djacobian * dq;
   proj_mat = Eigen::MatrixXd::Identity(7, 7) - pinv_jacobian * jacobian;
   ddq_nominal = Kp * (q_nominal - q) - Kd * dq;
 
+  // compute CBF constraint parameters
+  F_mat << dq, -data.Minv * nle;
+  G_mat << Eigen::MatrixXd::Zero(7, 7), data.Minv;
+
+  // set QP parameters
   qp_H.topLeftCorner(7, 7) = 2 * (jacobian.transpose() * jacobian + epsilon * proj_mat.transpose() * proj_mat);
   qp_g.topLeftCorner(7, 1) = -2 * (Jddq_desired.transpose() * jacobian + epsilon * ddq_nominal.transpose() * proj_mat.transpose() * proj_mat).transpose();
   qp_A << data.M, -Eigen::MatrixXd::Identity(7, 7);
   qp_b << -(data.nle - data.g);
 }
 
-void WaypointController::resetTarget(void) {
+void WaypointCBFController::resetTarget(void) {
   // get current end-effector position
   p_start = data.oMf[ee_frame_id].translation();
 
@@ -287,7 +293,7 @@ void WaypointController::resetTarget(void) {
   controlller_clock = 0.0;
 }
 
-void WaypointController::computeEndEffectorTarget(const double& controlller_clock, const double& traj_duration) {
+void WaypointCBFController::computeEndEffectorTarget(const double& controlller_clock, const double& traj_duration) {
   // compute α, dα, ddα
   auto [alpha, dalpha, ddalpha] = getAlphas(controlller_clock, traj_duration);
 
@@ -307,4 +313,4 @@ void WaypointController::computeEndEffectorTarget(const double& controlller_cloc
 
 }  // namespace fr3_ros
 
-PLUGINLIB_EXPORT_CLASS(fr3_ros::WaypointController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(fr3_ros::WaypointCBFController, controller_interface::ControllerBase)

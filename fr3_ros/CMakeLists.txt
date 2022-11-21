@@ -79,6 +79,7 @@ add_library(fr3_ros
   src/task_joint_pd_controller.cpp
   src/qp_controller.cpp
   src/waypoint_controller.cpp
+  src/waypoint_cbf_controller.cpp
   src/controller_utils.cpp
 )
 
