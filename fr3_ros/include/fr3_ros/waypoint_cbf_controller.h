@@ -47,7 +47,7 @@ class WaypointCBFController : public controller_interface::MultiInterfaceControl
   proxsuite::proxqp::dense::QP<double> qp;
 
   // define constructor and member initialization list
-  WaypointCBFController() : dim(14), n_eq(7), n_in(0), qp(dim, n_eq, n_in) {};
+  WaypointCBFController() : dim(14), n_eq(7), n_in(1), qp(dim, n_eq, n_in) {};
 
  private:
   void computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
@@ -133,6 +133,9 @@ class WaypointCBFController : public controller_interface::MultiInterfaceControl
   Eigen::Matrix<double, 14, 1> qp_g;
   Eigen::Matrix<double, 7, 14> qp_A;
   Eigen::Matrix<double, 7, 1> qp_b;
+  Eigen::Matrix<double, 1, 14> qp_C;
+  Eigen::Matrix<double, 1, 1> qp_lb;
+  Eigen::Matrix<double, 1, 1> qp_ub;
 
   // QP problem parameters
   Eigen::Matrix<double, 7, 1> q_nominal;
@@ -145,6 +148,7 @@ class WaypointCBFController : public controller_interface::MultiInterfaceControl
   // CBF constraint parameters
   Eigen::Matrix<double, 14, 1> F_mat;
   Eigen::Matrix<double, 14, 7> G_mat;
+  double d_max;
   Eigen::Matrix<double, 3, 1> normalVec;
 
   // define trajectory
