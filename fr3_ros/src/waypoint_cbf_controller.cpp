@@ -3,6 +3,7 @@
 #include <franka_example_controllers/pseudo_inversion.h>
 #include <fr3_ros/pinocchio_utils.h>
 #include <fr3_ros/controller_utils.h>
+#include <fr3_ros/cbf_utils.h>
 
 #include <cmath>
 #include <optional>
@@ -164,6 +165,9 @@ void WaypointCBFController::starting(const ros::Time& /* time */) {
   dP_target << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
   ddP_cmd << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
+  // define obstacle
+  normalVec << 0.0, 1.0, 0.0;
+
   // define waypoints and set current target waypoint
   waypoints[0] << 0.4, 0.4, 0.2;
   waypoints[1] << 0.4, -0.4, 0.2;
@@ -226,8 +230,11 @@ void WaypointCBFController::update(const ros::Time& /*time*/, const ros::Duratio
 
   // solve qp
   if (qp_initialized) {
+    // qp.update(qp_H, qp_g, qp_A, qp_b, qp_C, qp_lb, qp_ub);
     qp.update(qp_H, qp_g, qp_A, qp_b, std::nullopt, std::nullopt, std::nullopt);
   } else {
+    // qp.init(qp_H, qp_g, qp_A, qp_b, qp_C, qp_lb, qp_ub);
+    ROS_INFO_STREAM("qp_g.shape = " << qp_g.rows() << ", " << qp_g.cols());
     qp.init(qp_H, qp_g, qp_A, qp_b, std::nullopt, std::nullopt, std::nullopt);
     qp_initialized = true;
   }
@@ -244,7 +251,6 @@ void WaypointCBFController::update(const ros::Time& /*time*/, const ros::Duratio
     joint_handles_[i].setCommand(torques[i]);
   }
 
-  // ROS_INFO_STREAM("P_error: " << P_error.transpose());
   ROS_INFO_STREAM("p_measured: " << p_measured.transpose());
 
   // move to next target
@@ -260,7 +266,7 @@ void WaypointCBFController::stopping(const ros::Time& /*time*/) {
 }
 
 void WaypointCBFController::computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
-                                                 const Eigen::Matrix<double, 7, 1>& dq) {
+                                                    const Eigen::Matrix<double, 7, 1>& dq) {
   // compute pseudo-inverse of Jacobian
   franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
 
@@ -270,14 +276,19 @@ void WaypointCBFController::computeSolverParameters(const Eigen::Matrix<double, 
   ddq_nominal = Kp * (q_nominal - q) - Kd * dq;
 
   // compute CBF constraint parameters
-  F_mat << dq, -data.Minv * nle;
-  G_mat << Eigen::MatrixXd::Zero(7, 7), data.Minv;
+  // F_mat << dq, -data.Minv * data.nle;
+  // G_mat << Eigen::MatrixXd::Zero(7, 7), data.Minv;
+
+  // auto [cbf, dcbf_dq] = end_effector_box_cbf(q, dq, jacobian, djacobian, p_measured, normalVec, 0.3, 10.0);
 
   // set QP parameters
   qp_H.topLeftCorner(7, 7) = 2 * (jacobian.transpose() * jacobian + epsilon * proj_mat.transpose() * proj_mat);
   qp_g.topLeftCorner(7, 1) = -2 * (Jddq_desired.transpose() * jacobian + epsilon * ddq_nominal.transpose() * proj_mat.transpose() * proj_mat).transpose();
   qp_A << data.M, -Eigen::MatrixXd::Identity(7, 7);
   qp_b << -(data.nle - data.g);
+  // qp_C << Eigen::MatrixXd::Zero(1, 7), dcbf_dq * G_mat;
+  // qp_lb << -5.0 * cbf - dcbf_dq * F_mat - dcbf_dq * G_mat * data.g;
+  // qp_ub << 10000000.0;
 }
 
 void WaypointCBFController::resetTarget(void) {

@@ -81,6 +81,7 @@ add_library(fr3_ros
   src/waypoint_controller.cpp
   src/waypoint_cbf_controller.cpp
   src/controller_utils.cpp
+  src/cbf_utils.cpp
 )
 
 add_dependencies(fr3_ros

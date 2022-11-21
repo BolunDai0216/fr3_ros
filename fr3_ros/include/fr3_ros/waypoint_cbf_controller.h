@@ -21,6 +21,8 @@
 #include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
+
+#include <Eigen/Core>
 #include <Eigen/Dense>
 
 #include <franka_hw/franka_model_interface.h>
@@ -133,6 +135,9 @@ class WaypointCBFController : public controller_interface::MultiInterfaceControl
   Eigen::Matrix<double, 14, 1> qp_g;
   Eigen::Matrix<double, 7, 14> qp_A;
   Eigen::Matrix<double, 7, 1> qp_b;
+  Eigen::Matrix<double, 1, 14> qp_C;
+  Eigen::Matrix<double, 1, 1> qp_lb;
+  Eigen::Matrix<double, 1, 1> qp_ub;
 
   // QP problem parameters
   Eigen::Matrix<double, 7, 1> q_nominal;
@@ -145,6 +150,7 @@ class WaypointCBFController : public controller_interface::MultiInterfaceControl
   // CBF constraint parameters
   Eigen::Matrix<double, 14, 1> F_mat;
   Eigen::Matrix<double, 14, 7> G_mat;
+  Eigen::Matrix<double, 3, 1> normalVec;
 
   // define trajectory
   std::array<Eigen::Matrix<double, 3, 1>, 3> waypoints;
