@@ -51,8 +51,11 @@ class WaypointController : public controller_interface::MultiInterfaceController
 
  private:
   void computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
-                               const Eigen::Matrix<double, 7, 1>& dq,
-                               const Eigen::Matrix<double, 7, 6>& pinv_jacobian);
+                               const Eigen::Matrix<double, 7, 1>& dq);
+  
+  void resetTarget(void);
+
+  void computeEndEffectorTarget(const double& controlller_clock, const double& traj_duration);
 
   // pinocchio model & data
   pinocchio::Model model;
@@ -60,6 +63,9 @@ class WaypointController : public controller_interface::MultiInterfaceController
 
   // end-effector frame id in Pinocchio
   int ee_frame_id;
+
+  // urdf file path for fr3 model
+  std::string urdf_filename;
 
   // interface with franka_hw
   std::unique_ptr<franka_hw::FrankaStateHandle> state_handle_;
@@ -76,11 +82,23 @@ class WaypointController : public controller_interface::MultiInterfaceController
   // applied torque
   Eigen::Matrix<double, 7, 1> torques;
 
-  // fixed rotation matrix target
-  Eigen::Matrix<double, 3, 3> R_target;
-
-  // changing position vector target
+  // target position and orientation at each time step
   Eigen::Matrix<double, 3, 1> p_target;
+  Eigen::Matrix<double, 3, 1> v_target;
+  Eigen::Matrix<double, 3, 1> a_target;
+  Eigen::Matrix<double, 3, 3> R_target;
+  Eigen::Vector3d w_target;
+  Eigen::Vector3d dw_target;
+
+  // intial position and orientation
+  Eigen::Matrix<double, 3, 1> p_start;
+  Eigen::Matrix<double, 3, 3> R_start;
+
+  // terminal target position and orientation
+  Eigen::Matrix<double, 3, 1> p_end;
+  Eigen::Matrix<double, 3, 3> R_end;
+
+  // changing positional vector target
   Eigen::Matrix<double, 6, 1> dP_target;
   Eigen::Matrix<double, 6, 1> ddP_cmd;
 
@@ -110,26 +128,24 @@ class WaypointController : public controller_interface::MultiInterfaceController
   std::vector<double> tk_gains_;
   std::vector<double> td_gains_;
 
-  double half_period = 3;
-  double amplitude = 0.3;
-
+  // QP parameters
   Eigen::Matrix<double, 14, 14> qp_H;
   Eigen::Matrix<double, 14, 1> qp_g;
   Eigen::Matrix<double, 7, 14> qp_A;
   Eigen::Matrix<double, 7, 1> qp_b;
 
+  // QP problem parameters
   Eigen::Matrix<double, 7, 1> q_nominal;
   Eigen::Matrix<double, 7, 1> ddq_nominal;
-
   Eigen::Matrix<double, 6, 1> Jddq_desired;
   Eigen::Matrix<double, 7, 7> proj_mat;
-  
   double epsilon;
-  std::string urdf_filename;
-  
   bool qp_initialized = false;
 
+  // define trajectory
   std::array<Eigen::Matrix<double, 3, 1>, 3> waypoints;
+  int waypoint_id;
+  double traj_duration;
 };
 
 }  // namespace fr3_ros

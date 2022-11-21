@@ -147,24 +147,40 @@ void WaypointController::starting(const ros::Time& /* time */) {
   Eigen::Map<Eigen::Matrix<double, 7, 1>> q_init(initial_state.q.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> dq_init(initial_state.dq.data());
 
+  // update data for initial configuration computation
   updatePinocchioModel(model, data, q_init, dq_init);
 
   // define end-effector frame id in pinocchio
   ee_frame_id = model.getFrameId("fr3_hand_tcp");
 
-  // get current end-effector position and orientation
-  p_target = data.oMf[ee_frame_id].translation();
-  R_target = data.oMf[ee_frame_id].rotation();
+  // define duration of each trajctory segment
+  traj_duration = 5.0;
 
+  // get current end-effector position and orientation
+  p_start = data.oMf[ee_frame_id].translation();
+  R_start = data.oMf[ee_frame_id].rotation();
+
+  // initialize dP target and commanded ddP
   dP_target << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
   ddP_cmd << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
-  // initialize qp parameters with zero
+  // define waypoints and set current target waypoint
+  waypoints[0] << 0.3, 0.4, 0.2;
+  waypoints[1] << 0.3, -0.4, 0.2;
+  waypoints[2] << 0.3, 0.0, 0.5;
+  waypoint_id = 0;
+
+  // define terminal target for both position and orientation
+  p_end = waypoints[waypoint_id];
+  R_end = R_start;
+
+  // initialize qp parameters with zeros
   qp_H = Eigen::MatrixXd::Zero(14, 14);
   qp_g = Eigen::MatrixXd::Zero(14, 1);
   qp_A = Eigen::MatrixXd::Zero(7, 14);
   qp_b = Eigen::MatrixXd::Zero(7, 1);
 
+  // set nominal joint configuration
   q_nominal = q_init;
 
   // get Kp and Kd gains
@@ -173,18 +189,9 @@ void WaypointController::starting(const ros::Time& /* time */) {
   
   // initialize clock
   controlller_clock = 0.0;
-
-  waypoints[0] << 0.3, 0.0, 0.5;
-  waypoints[1] << 0.3, 0.4, 0.2;
-  waypoints[2] << 0.3, -0.4, 0.2;
-
-  ROS_INFO_STREAM(waypoints[0].transpose());
-  ROS_INFO_STREAM(waypoints[1].transpose());
-  ROS_INFO_STREAM(waypoints[2].transpose());
 }
 
 void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& period) {
-
   // update controller clock
   controlller_clock += period.toSec();
 
@@ -194,37 +201,25 @@ void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& 
   Eigen::Map<Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_J_d(robot_state.tau_J_d.data());
 
-  updatePinocchioModel(model, data, q, dq);
-
   // measure end-effector position and orientation
+  updatePinocchioModel(model, data, q, dq);
   p_measured = data.oMf[ee_frame_id].translation();
   R_measured = data.oMf[ee_frame_id].rotation();
 
-  // get end-effector jacobian
+  // get end-effector jacobian and its time derivative
   pin::getFrameJacobian(model, data, ee_frame_id, pin::LOCAL_WORLD_ALIGNED, jacobian);
-
-  // get time derivative of positional Jacobian
   pin::getFrameJacobianTimeVariation(model, data, ee_frame_id, pin::LOCAL_WORLD_ALIGNED, djacobian);
 
-  // compute orientation error
-  rotvec_err = computeRotVecError(R_target, R_measured);
+  // compute p, v, a, w, dw targets and rotvec_err
+  computeEndEffectorTarget(controlller_clock, traj_duration);
 
-  // compute α, dα, ddα
-  auto [alpha, dalpha, ddalpha] = getAlphas(controlller_clock, 30.0);
-
-  // compute new p_target, dP_target, ddP_cmd along the y-axis
-  p_target[1] = std::sin(M_PI * controlller_clock / half_period) * amplitude;
-  dP_target[1] = (M_PI / half_period) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
-  ddP_cmd[1] = -(M_PI * M_PI / (half_period * half_period)) * std::sin(M_PI * controlller_clock / half_period) * amplitude;
-
-  // compute positional error
+  // set target configuration at this time step
   P_error << p_target - p_measured, rotvec_err;
+  dP_target << v_target, w_target;
+  ddP_cmd << a_target, dw_target;
 
-  // compute pseudo-inverse of Jacobian
-  franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
-
-  // get H, g, A, b
-  computeSolverParameters(q, dq, pinv_jacobian);
+  // get qp_H, qp_g, qp_A, qp_b
+  computeSolverParameters(q, dq);
 
   // get M, h, g
   getDynamicsParameter(model, data, q, dq);
@@ -238,6 +233,7 @@ void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& 
   }
   qp.solve();
 
+  // get solved torques from qp solution
   torques = qp.results.x.bottomLeftCorner(7, 1);
 
   // Saturate torque rate to avoid discontinuities
@@ -248,7 +244,13 @@ void WaypointController::update(const ros::Time& /*time*/, const ros::Duration& 
     joint_handles_[i].setCommand(torques[i]);
   }
 
+  // ROS_INFO_STREAM("P_error: " << P_error.transpose());
   ROS_INFO_STREAM("p_measured: " << p_measured.transpose());
+
+  // move to next target
+  if (controlller_clock >= traj_duration + 2.0) {
+    resetTarget();
+  }
 }
 
 void WaypointController::stopping(const ros::Time& /*time*/) {
@@ -258,8 +260,10 @@ void WaypointController::stopping(const ros::Time& /*time*/) {
 }
 
 void WaypointController::computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
-                                                 const Eigen::Matrix<double, 7, 1>& dq,
-                                                 const Eigen::Matrix<double, 7, 6>& pinv_jacobian) {
+                                                 const Eigen::Matrix<double, 7, 1>& dq) {
+  // compute pseudo-inverse of Jacobian
+  franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
+                                                
   Jddq_desired = ddP_cmd + tKp * P_error + tKd * (dP_target - jacobian * dq) - djacobian * dq;
   proj_mat = Eigen::MatrixXd::Identity(7, 7) - pinv_jacobian * jacobian;
   ddq_nominal = Kp * (q_nominal - q) - Kd * dq;
@@ -268,6 +272,37 @@ void WaypointController::computeSolverParameters(const Eigen::Matrix<double, 7, 
   qp_g.topLeftCorner(7, 1) = -2 * (Jddq_desired.transpose() * jacobian + epsilon * ddq_nominal.transpose() * proj_mat.transpose() * proj_mat).transpose();
   qp_A << data.M, -Eigen::MatrixXd::Identity(7, 7);
   qp_b << -(data.nle - data.g);
+}
+
+void WaypointController::resetTarget(void) {
+  // get current end-effector position
+  p_start = data.oMf[ee_frame_id].translation();
+
+  waypoint_id = (waypoint_id + 1) % 3;
+
+  // define terminal target for both position and orientation
+  p_end = waypoints[waypoint_id];
+
+  // reset controller_clock
+  controlller_clock = 0.0;
+}
+
+void WaypointController::computeEndEffectorTarget(const double& controlller_clock, const double& traj_duration) {
+  // compute α, dα, ddα
+  auto [alpha, dalpha, ddalpha] = getAlphas(controlller_clock, traj_duration);
+
+  // compute positional error
+  p_target = p_start + alpha * (p_end - p_start);
+  R_target = R_start;
+  rotvec_err = computeRotVecError(R_target, R_measured);
+
+  // compute velocity target
+  v_target = dalpha * (p_end - p_start);
+  w_target = Eigen::MatrixXd::Zero(3, 1);
+
+  // compute commanded accleration
+  a_target = ddalpha * (p_end - p_start);
+  dw_target = Eigen::MatrixXd::Zero(3, 1);
 }
 
 }  // namespace fr3_ros

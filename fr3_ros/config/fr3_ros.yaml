@@ -152,4 +152,4 @@ waypoint_controller:
         - 20.0
         - 20.0
         - 20.0
-    epsilon: 0.3
+    epsilon: 0.01
