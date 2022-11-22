@@ -76,9 +76,9 @@ void RepetitiveCalibController::starting(const ros::Time& /* time */) {
   elapsed_time_ = ros::Duration(0.0);
 
   // set waypoints
-  waypoints[0] << 0.407464, -0.276469, initial_pose_[14];
-  waypoints[1] << 0.407464, -0.276469, 0.006;
-  waypoints[2] << 0.407464, -0.276469, initial_pose_[14];
+  waypoints[0] << 0.408545, -0.277075, initial_pose_[14];
+  waypoints[1] << 0.408545, -0.277075, 0.006;
+  waypoints[2] << 0.408545, -0.277075, initial_pose_[14];
   waypoints[3] << initial_pose_[12], initial_pose_[13], initial_pose_[14];
   waypoint_id = 0;
 
@@ -100,7 +100,11 @@ void RepetitiveCalibController::update(const ros::Time& /* time */, const ros::D
   controlller_clock += period.toSec();
 
   // calculating alpha
-  double alpha = std::sin(M_PI / 4 * (1 - std::cos((M_PI / traj_duration) * elapsed_time_.toSec())));
+  if (controlller_clock <= traj_duration) {
+    alpha = std::sin(M_PI / 4 * (1 - std::cos((M_PI / traj_duration) * controlller_clock)));
+  } else {
+    alpha = 1.0;
+  }
 
   // compute target pose
   target_pose_ = initial_pose_;
@@ -112,7 +116,7 @@ void RepetitiveCalibController::update(const ros::Time& /* time */, const ros::D
   cartesian_pose_handle_->setCommand(target_pose_);
   
   // update target
-  if (controlller_clock >= traj_duration + 1.0) {
+  if (controlller_clock >= traj_duration + 3.0) {
     controlller_clock = 0.0;
 
     // set to next waypoint

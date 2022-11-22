@@ -47,6 +47,7 @@ class RepetitiveCalibController
   std::array<Eigen::Matrix<double, 3, 1>, 4> waypoints;
   int waypoint_id;
   double traj_duration;
+  double alpha;
 };
 
 }  // namespace fr3_ros
