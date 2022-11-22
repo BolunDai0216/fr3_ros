@@ -81,7 +81,9 @@ add_library(fr3_ros
   src/waypoint_controller.cpp
   src/waypoint_cbf_controller.cpp
   src/cbf_controller.cpp
+  src/poly_path_controller.cpp
   src/controller_utils.cpp
+  src/traj_gen.cpp
   src/cbf_utils.cpp
 )
 

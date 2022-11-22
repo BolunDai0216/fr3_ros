@@ -29,4 +29,9 @@
       A CBFQP-based controller testing purpose using Pinocchio and ProxSuite.
     </description>
   </class>
+  <class name="fr3_ros/PolyPathController" type="fr3_ros::PolyPathController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that uses polynomials to plan paths between waypoints.
+    </description>
+  </class>
 </library>
