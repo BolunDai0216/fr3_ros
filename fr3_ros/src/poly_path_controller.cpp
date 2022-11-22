@@ -297,13 +297,7 @@ void PolyPathController::resetTarget(void) {
 
 void PolyPathController::computeEndEffectorTarget(const double& controlller_clock, const double& traj_duration) {
   // compute p, v, a targets
-  if (controlller_clock <= traj_duration) {
-    computePolyTargets(controlller_clock, poly_x, poly_y, poly_z, p_target, v_target, a_target);
-  } else{
-    p_target = p_end;
-    v_target = Eigen::MatrixXd::Zero(3, 1);
-    a_target = Eigen::MatrixXd::Zero(3, 1);
-  }
+  computePolyTargets(controlller_clock, traj_duration, poly_x, poly_y, poly_z, p_target, v_target, a_target);
   
   // compute orientational targets
   R_target = R_start;

@@ -15,6 +15,7 @@ void computePoly(const Eigen::Matrix<double, 3, 1>& p_start,
                  Eigen::Matrix<double, 6, 1>& poly_z);
 
 void computePolyTargets(const double& t,
+                        const double& T,
                         const Eigen::Matrix<double, 6, 1>& poly_x,
                         const Eigen::Matrix<double, 6, 1>& poly_y,
                         const Eigen::Matrix<double, 6, 1>& poly_z,

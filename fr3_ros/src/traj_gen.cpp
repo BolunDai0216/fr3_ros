@@ -33,6 +33,7 @@ void computePoly(const Eigen::Matrix<double, 3, 1>& p_start,
 }
 
 void computePolyTargets(const double& t,
+                        const double& T,
                         const Eigen::Matrix<double, 6, 1>& poly_x,
                         const Eigen::Matrix<double, 6, 1>& poly_y,
                         const Eigen::Matrix<double, 6, 1>& poly_z,
@@ -40,10 +41,11 @@ void computePolyTargets(const double& t,
                         Eigen::Matrix<double, 3, 1>& v_target,
                         Eigen::Matrix<double, 3, 1>& a_target) {
     Eigen::Matrix<double, 1, 6> p_mat, v_mat, a_mat;
+    double _t = t <= T ? t : T;  // tenary operator
 
-    p_mat << std::pow(t, 5), std::pow(t, 4), std::pow(t, 3), std::pow(t, 2), t, 1.0;
-    v_mat << 5*std::pow(t, 4), 4*std::pow(t, 3), 3*std::pow(t, 2), 2*t, 1.0, 0.0;
-    a_mat << 20*std::pow(t, 3), 12*std::pow(t, 2), 6*t, 2.0, 0.0, 0.0;
+    p_mat << std::pow(_t, 5), std::pow(_t, 4), std::pow(_t, 3), std::pow(_t, 2), _t, 1.0;
+    v_mat << 5*std::pow(_t, 4), 4*std::pow(_t, 3), 3*std::pow(_t, 2), 2*_t, 1.0, 0.0;
+    a_mat << 20*std::pow(_t, 3), 12*std::pow(_t, 2), 6*_t, 2.0, 0.0, 0.0;
 
     p_target << p_mat * poly_x, p_mat * poly_y, p_mat * poly_z;
     v_target << v_mat * poly_x, v_mat * poly_y, v_mat * poly_z;
