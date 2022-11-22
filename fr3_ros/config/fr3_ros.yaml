@@ -287,3 +287,7 @@ poly_path_controller:
         - 20.0
         - 20.0
     epsilon: 0.01
+
+repetitive_calib_controller:
+    type: fr3_ros/RepetitiveCalibController
+    arm_id: $(arg arm_id)

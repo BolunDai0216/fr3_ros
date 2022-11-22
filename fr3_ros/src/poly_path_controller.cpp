@@ -16,6 +16,7 @@
 
 #include <proxsuite/proxqp/dense/dense.hpp>
 #include <proxsuite/proxqp/utils/random_qp_problems.hpp>
+#include <Eigen/SVD>
 
 namespace pin = pinocchio;
 
@@ -155,7 +156,7 @@ void PolyPathController::starting(const ros::Time& /* time */) {
   ee_frame_id = model.getFrameId("fr3_hand_tcp");
 
   // define duration of each trajctory segment
-  traj_duration = 10.0;
+  traj_duration = 5.0;
 
   // get current end-effector position and orientation
   p_start = data.oMf[ee_frame_id].translation();
@@ -166,9 +167,10 @@ void PolyPathController::starting(const ros::Time& /* time */) {
   ddP_cmd << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
   // define waypoints and set current target waypoint
-  waypoints[0] << 0.4, 0.4, 0.2;
-  waypoints[1] << 0.4, -0.4, 0.2;
-  waypoints[2] << 0.3, 0.0, 0.5;
+  waypoints[0] << 0.35, -0.4, 0.4;
+  waypoints[1] << 0.35, -0.4, 0.1;
+  waypoints[2] << 0.35, -0.4, 0.4;
+  waypoints[3] << 0.3, 0.0, 0.48;
   waypoint_id = 0;
 
   // define terminal target for both position and orientation
@@ -189,7 +191,7 @@ void PolyPathController::starting(const ros::Time& /* time */) {
   readTaskPDGains(tk_gains_, td_gains_, tKp, tKd);
 
   // compute coefficient for polynomial path
-  computePoly(p_start, p_end, traj_duration, poly_x, poly_y, poly_z);
+  computePolyJerk(p_start, p_end, traj_duration, poly_x, poly_y, poly_z);
   
   // initialize clock
   controlller_clock = 0.0;
@@ -209,6 +211,11 @@ void PolyPathController::update(const ros::Time& /*time*/, const ros::Duration& 
   updatePinocchioModel(model, data, q, dq);
   p_measured = data.oMf[ee_frame_id].translation();
   R_measured = data.oMf[ee_frame_id].rotation();
+  
+  // move to next target
+  if (controlller_clock >= traj_duration + 1.0) {
+    resetTarget();
+  }
 
   // get end-effector jacobian and its time derivative
   pin::getFrameJacobian(model, data, ee_frame_id, pin::LOCAL_WORLD_ALIGNED, jacobian);
@@ -248,13 +255,13 @@ void PolyPathController::update(const ros::Time& /*time*/, const ros::Duration& 
     joint_handles_[i].setCommand(torques[i]);
   }
 
-  // ROS_INFO_STREAM("P_error: " << P_error.transpose());
-  ROS_INFO_STREAM("p_measured: " << p_measured.transpose());
+  // compute singular values
+  // Eigen::JacobiSVD<Eigen::MatrixXd> svd;
+  // svd.compute(jacobian, Eigen::ComputeThinV | Eigen::ComputeThinU);
+  // ROS_INFO_STREAM("Its singular values are: \n" << svd.singularValues());
 
-  // move to next target
-  if (controlller_clock >= traj_duration + 2.0) {
-    resetTarget();
-  }
+  // ROS_INFO_STREAM("P_error: " << P_error.transpose());
+  // ROS_INFO_STREAM("p_measured: " << p_measured.transpose());
 }
 
 void PolyPathController::stopping(const ros::Time& /*time*/) {
@@ -283,13 +290,13 @@ void PolyPathController::resetTarget(void) {
   p_start = data.oMf[ee_frame_id].translation();
 
   // set waypoint to next one
-  waypoint_id = (waypoint_id + 1) % 3;
+  waypoint_id = (waypoint_id + 1) % 4;
 
   // define position terminal target, orientation target is unchanged
   p_end = waypoints[waypoint_id];
 
   // compute coefficient for polynomial path
-  computePoly(p_start, p_end, traj_duration, poly_x, poly_y, poly_z);
+  computePolyJerk(p_start, p_end, traj_duration, poly_x, poly_y, poly_z);
 
   // reset controller_clock
   controlller_clock = 0.0;
@@ -297,7 +304,7 @@ void PolyPathController::resetTarget(void) {
 
 void PolyPathController::computeEndEffectorTarget(const double& controlller_clock, const double& traj_duration) {
   // compute p, v, a targets
-  computePolyTargets(controlller_clock, traj_duration, poly_x, poly_y, poly_z, p_target, v_target, a_target);
+  computePolyJerkTargets(controlller_clock, traj_duration, poly_x, poly_y, poly_z, p_target, v_target, a_target);
   
   // compute orientational targets
   R_target = R_start;

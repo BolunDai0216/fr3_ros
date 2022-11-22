@@ -34,4 +34,9 @@
       A controller that uses polynomials to plan paths between waypoints.
     </description>
   </class>
+  <class name="fr3_ros/RepetitiveCalibController" type="fr3_ros::RepetitiveCalibController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that performs a repetitive task for calibration purposes.
+    </description>
+  </class>
 </library>

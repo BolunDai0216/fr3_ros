@@ -143,10 +143,10 @@ class PolyPathController : public controller_interface::MultiInterfaceController
   bool qp_initialized = false;
 
   // define trajectory
-  std::array<Eigen::Matrix<double, 3, 1>, 3> waypoints;
-  Eigen::Matrix<double, 6, 1> poly_x;
-  Eigen::Matrix<double, 6, 1> poly_y;
-  Eigen::Matrix<double, 6, 1> poly_z;
+  std::array<Eigen::Matrix<double, 3, 1>, 4> waypoints;
+  Eigen::Matrix<double, 8, 1> poly_x;
+  Eigen::Matrix<double, 8, 1> poly_y;
+  Eigen::Matrix<double, 8, 1> poly_z;
   int waypoint_id;
   double traj_duration;
 };
