@@ -18,6 +18,7 @@ namespace fr3_ros {
 
 bool TaskJointPDController::init(hardware_interface::RobotHW* robot_hw,
                                  ros::NodeHandle& node_handle) {
+  
   // check if got arm_id
   std::string arm_id;
   if (!node_handle.getParam("arm_id", arm_id)) {
@@ -117,6 +118,7 @@ bool TaskJointPDController::init(hardware_interface::RobotHW* robot_hw,
   data = pin::Data(model);
 
   control_log_publisher = registerLogPublisher(node_handle);
+  MarkerListVisualizer test(node_handle, 2, 1000);
 
   return true;
 }
@@ -212,6 +214,13 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
   logData.torque_cmd = torques;
   //publish the log data
   publishLogMsgs(&logData, &control_log_publisher);
+  // std::vector<Eigen::Matrix<double, 7, 1>> poses;
+  // Eigen::VectorXd pose(7);
+  // pose << 0,0,0,0,0,0,1;
+  // poses.push_back(pose);
+  // pose << 1,0,0,0,0,0,1;
+  // poses.push_back(pose);
+  // marker_visulizer->publish(poses);
 }
 
 void TaskJointPDController::stopping(const ros::Time& /*time*/) {

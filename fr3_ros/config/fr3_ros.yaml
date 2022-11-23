@@ -68,7 +68,7 @@ task_joint_pd_controller:
 
 qp_controller:
     type: fr3_ros/QPController
-    urdf_filename: /home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf
+    urdf_filename: /home/robocaster/myData/Robotics/projects/manipulation/franka_ros_ws/src/fr3_ros/fr3_ros/fr3.urdf
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1

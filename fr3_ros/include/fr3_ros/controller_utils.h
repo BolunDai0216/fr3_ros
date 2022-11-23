@@ -7,6 +7,9 @@
 #include <Eigen/Dense>
 #include "fr3_ros/controlLogs.h"
 #include "ros/ros.h"
+
+#include <ros/ros.h>
+
 namespace fr3_ros {
 
 struct LogDataType{

@@ -79,6 +79,7 @@ add_library(fr3_ros
   src/task_joint_pd_controller.cpp
   src/qp_controller.cpp
   src/controller_utils.cpp
+  src/visualization_utils.cpp
 )
 
 add_dependencies(fr3_ros

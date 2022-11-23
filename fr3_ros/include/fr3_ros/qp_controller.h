@@ -30,6 +30,7 @@
 
 #include <proxsuite/proxqp/dense/dense.hpp>
 #include <proxsuite/proxqp/utils/random_qp_problems.hpp>
+#include "visualization_utils.h"
 
 namespace fr3_ros {
 
@@ -46,7 +47,7 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   // pinocchio model & data
   pinocchio::Model model;
   pinocchio::Data data;
-
+  
   // end-effector frame id in Pinocchio
   int ee_frame_id;
 
