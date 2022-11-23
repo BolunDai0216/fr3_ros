@@ -13,7 +13,7 @@
 namespace fr3_ros {
 
 struct LogDataType{
-  Eigen::Matrix<double, 7, 1>  q;
+  Eigen::Matrix<double, 7, 1> q;
   Eigen::Matrix<double, 7, 1> q_dot;
   Eigen::Matrix<double, 7, 1> q_des;
   Eigen::Matrix<double, 7, 1> q_dot_des;
@@ -25,6 +25,11 @@ struct LogDataType{
   Eigen::Matrix<double, 6, 7> J_aux;
   Eigen::Matrix<double, 7, 7> M_aux;
   Eigen::Matrix<double, 7, 1> torque_cmd;
+  Eigen::Matrix<double, 3, 1> p;
+  Eigen::Matrix<double, 3, 1> p_des;
+  Eigen::Matrix<double, 6, 1> P_dot;
+  Eigen::Matrix<double, 6, 1> P_dot_des;
+  Eigen::Matrix<double, 6, 1> P_ddot_cmd;
 };
 
 ros::Publisher registerLogPublisher(ros::NodeHandle& node_handle);

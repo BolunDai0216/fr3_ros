@@ -270,6 +270,11 @@ void PolyPathController::update(const ros::Time& /*time*/, const ros::Duration& 
   logData.M = data.M;
   logData.C = data.C;
   logData.torque_cmd = torques;
+  logData.p = p_measured;
+  logData.p_des = p_target;
+  logData.P_dot = jacobian * dq;
+  logData.P_dot_des = dP_target;
+  logData.P_ddot_cmd = ddP_cmd;
   
   // publish the log data
   publishLogMsgs(&logData, &control_log_publisher);

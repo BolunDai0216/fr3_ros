@@ -53,3 +53,6 @@ CATKIN_IGNORE
 
 # VS Code
 .vscode
+
+# Jupyter Notebooks
+notebooks/
