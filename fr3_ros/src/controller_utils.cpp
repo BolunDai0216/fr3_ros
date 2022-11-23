@@ -54,7 +54,7 @@ void publishLogMsgs(LogDataType *data, ros::Publisher *pub) {
 Eigen::Matrix<double, 7, 1> saturateTorqueRate(const Eigen::Matrix<double, 7, 1>& tau_d_calculated,
                                                const Eigen::Matrix<double, 7, 1>& tau_J_d) {
   Eigen::Matrix<double, 7, 1> tau_d_saturated{};
-  const double delta_tau_max_{0.5};
+  const double delta_tau_max_{1.0};
   
   for (size_t i = 0; i < 7; i++) {
     double difference = tau_d_calculated[i] - tau_J_d[i];
