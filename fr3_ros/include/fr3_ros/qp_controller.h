@@ -28,11 +28,7 @@
 #include <franka_hw/trigger_rate.h>
 
 #include <proxsuite/proxqp/dense/dense.hpp>
-<<<<<<< HEAD
-#include <proxsuite/proxqp/utils/random_qp_problems.hpp>
-#include "visualization_utils.h"
-=======
->>>>>>> 960e3f2e99b6888bd2093fe6efe0d84540d59f2e
+#include <fr3_ros/visualization_utils.h>
 
 namespace fr3_ros {
 

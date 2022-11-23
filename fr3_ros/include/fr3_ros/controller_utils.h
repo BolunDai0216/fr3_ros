@@ -6,14 +6,10 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include "fr3_ros/controlLogs.h"
-#include "ros/ros.h"
-
-<<<<<<< HEAD
 #include <ros/ros.h>
 
-=======
->>>>>>> 960e3f2e99b6888bd2093fe6efe0d84540d59f2e
+#include "fr3_ros/controlLogs.h"
+
 namespace fr3_ros {
 
 struct LogDataType{

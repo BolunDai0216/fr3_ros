@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <!-- rosbag -->
-  <node pkg="rosbag" type="record" name="rosbag_recorder" respawn="true" output="screen" args="-o $(find fr3_ros)/bag/ " />
+  <node pkg="rosbag" type="record" name="rosbag_recorder" respawn="true" output="screen" args="-o $(find fr3_ros)/bag/ /poly_path_controller/control_logs" />
 
   <!-- Gazebo & GUI Configuration -->
   <arg name="gazebo"      default="true"  doc="Should the gazebo simulation be launched? Use false in case if you want to include this file and launch gazebo yourself" />

@@ -84,12 +84,9 @@ add_library(fr3_ros
   src/poly_path_controller.cpp
   src/repetitive_calib_controller.cpp
   src/controller_utils.cpp
-<<<<<<< HEAD
   src/visualization_utils.cpp
-=======
   src/traj_gen.cpp
   src/cbf_utils.cpp
->>>>>>> 960e3f2e99b6888bd2093fe6efe0d84540d59f2e
 )
 
 add_dependencies(fr3_ros

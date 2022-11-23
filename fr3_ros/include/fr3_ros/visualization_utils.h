@@ -18,7 +18,6 @@ namespace fr3_ros {
     void publish(std::vector<Eigen::Matrix<double, 7, 1>> &marker_poses, std::vector<Eigen::Vector3d> &colors);
 
   private:
-    // pinocchio model & data
     int markers_count;
     ros::Publisher publisher;
     ros::Time last_transmission;

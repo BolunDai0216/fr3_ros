@@ -140,6 +140,9 @@ bool PolyPathController::init(hardware_interface::RobotHW* robot_hw,
   pin::urdf::buildModel(urdf_filename, model);
   data = pin::Data(model);
 
+  // define publisher
+  control_log_publisher = registerLogPublisher(node_handle);
+
   return true;
 }
 
@@ -262,6 +265,14 @@ void PolyPathController::update(const ros::Time& /*time*/, const ros::Duration& 
 
   // ROS_INFO_STREAM("P_error: " << P_error.transpose());
   // ROS_INFO_STREAM("p_measured: " << p_measured.transpose());
+
+  // log data
+  logData.M = data.M;
+  logData.C = data.C;
+  logData.torque_cmd = torques;
+  
+  // publish the log data
+  publishLogMsgs(&logData, &control_log_publisher);
 }
 
 void PolyPathController::stopping(const ros::Time& /*time*/) {

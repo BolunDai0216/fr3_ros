@@ -27,6 +27,7 @@
 #include <franka_hw/franka_state_interface.h>
 #include <franka_hw/trigger_rate.h>
 
+#include <fr3_ros/controller_utils.h>
 #include <proxsuite/proxqp/dense/dense.hpp>
 
 namespace fr3_ros {
@@ -56,6 +57,12 @@ class PolyPathController : public controller_interface::MultiInterfaceController
   void resetTarget(void);
 
   void computeEndEffectorTarget(const double& controlller_clock, const double& traj_duration);
+
+  // publisher object for the log messages
+  ros::Publisher control_log_publisher;
+
+  // for logging data
+  LogDataType logData;
 
   // pinocchio model & data
   pinocchio::Model model;
