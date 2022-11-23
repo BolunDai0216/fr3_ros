@@ -159,7 +159,7 @@ void PolyPathController::starting(const ros::Time& /* time */) {
   ee_frame_id = model.getFrameId("fr3_hand_tcp");
 
   // define duration of each trajctory segment
-  traj_duration = 10.0;
+  traj_duration = 5.0;
 
   // get current end-effector position and orientation
   p_start = data.oMf[ee_frame_id].translation();
@@ -303,7 +303,7 @@ void PolyPathController::computeSolverParameters(const Eigen::Matrix<double, 7, 
 
 void PolyPathController::resetTarget(void) {
   // get current end-effector position
-  p_start = data.oMf[ee_frame_id].translation();
+  p_start = waypoints[waypoint_id];
 
   // set waypoint to next one
   waypoint_id = (waypoint_id + 1) % 4;

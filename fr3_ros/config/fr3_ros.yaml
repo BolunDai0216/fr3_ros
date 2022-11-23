@@ -197,7 +197,7 @@ waypoint_cbf_controller:
         - 20.0
         - 20.0
     epsilon: 0.1
-    d_max: 0.35
+    d_max: 0.3
 
 cbf_controller:
     type: fr3_ros/CBFController

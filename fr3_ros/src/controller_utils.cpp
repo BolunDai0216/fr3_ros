@@ -11,23 +11,17 @@ ros::Publisher registerLogPublisher(ros::NodeHandle& node_handle) {
 void publishLogMsgs(LogDataType *data, ros::Publisher *pub) {  
   fr3_ros::controlLogs log_msg;
   
-  for(int i=0; i<7; i++)
+  for(int i=0; i<7; i++) {
     log_msg.q.push_back(data->q[i]);
-
-  for(int i=0; i<7; i++)
     log_msg.q_dot.push_back(data->q_dot[i]);
-
-  for(int i=0; i<7; i++)
     log_msg.q_des.push_back(data->q_des[i]);
-
-  for(int i=0; i<7; i++)
     log_msg.q_dot_des.push_back(data->q_dot_des[i]);
+  } 
 
-  for(int i=0; i < data->M.size(); i++)
+  for(int i=0; i < data->M.size(); i++) {
     log_msg.M.push_back(data->M.data()[i]);
-
-  for(int i=0; i < data->M_aux.size(); i++)
     log_msg.M_aux.push_back(data->M_aux.data()[i]);
+  }
 
   for(int i=0; i < data->C.size(); i++)
     log_msg.C.push_back(data->C.data()[i]);
@@ -35,32 +29,25 @@ void publishLogMsgs(LogDataType *data, ros::Publisher *pub) {
   for(int i=0; i < data->G.size(); i++)
     log_msg.G.push_back(data->G.data()[i]);
 
-  for(int i=0; i < data->J.size(); i++)
+  for(int i=0; i < data->J.size(); i++) {
     log_msg.J.push_back(data->J.data()[i]);
-
-  for(int i=0; i < data->J_dot.size(); i++)
     log_msg.J_dot.push_back(data->J_dot.data()[i]);
-
-  for(int i=0; i < data->J_aux.size(); i++)
     log_msg.J_aux.push_back(data->J_aux.data()[i]);
+  } 
 
   for(int i=0; i < data->torque_cmd.size(); i++)
     log_msg.torque_cmd.push_back(data->torque_cmd.data()[i]);
   
-  for(int i=0; i<3; i++)
+  for(int i=0; i<3; i++) {
     log_msg.p.push_back(data->p[i]);
-  
-  for(int i=0; i<3; i++)
     log_msg.p_des.push_back(data->p_des[i]);
+  }
   
-  for(int i=0; i<6; i++)
+  for(int i=0; i<6; i++) {
     log_msg.P_dot.push_back(data->P_dot[i]);
-  
-  for(int i=0; i<6; i++)
     log_msg.P_dot_des.push_back(data->P_dot_des[i]);
-
-  for(int i=0; i<6; i++)
     log_msg.P_ddot_cmd.push_back(data->P_ddot_cmd[i]);
+  }
 
   log_msg.header.stamp = ros::Time::now();
   pub->publish(log_msg);

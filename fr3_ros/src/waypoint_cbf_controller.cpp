@@ -257,9 +257,9 @@ void WaypointCBFController::update(const ros::Time& /*time*/, const ros::Duratio
   ROS_INFO_STREAM("p_measured: " << p_measured.transpose());
 
   // move to next target
-  // if (controlller_clock >= traj_duration + 2.0) {
-  //   resetTarget();
-  // }
+  if (controlller_clock >= traj_duration + 2.0) {
+    resetTarget();
+  }
 }
 
 void WaypointCBFController::stopping(const ros::Time& /*time*/) {
@@ -294,7 +294,7 @@ void WaypointCBFController::computeSolverParameters(const Eigen::Matrix<double, 
 
 void WaypointCBFController::resetTarget(void) {
   // get current end-effector position
-  p_start = data.oMf[ee_frame_id].translation();
+  p_start = waypoints[waypoint_id];
 
   waypoint_id = (waypoint_id + 1) % 3;
 
