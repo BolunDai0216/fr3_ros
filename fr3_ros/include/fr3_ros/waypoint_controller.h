@@ -27,37 +27,45 @@
 #include <franka_hw/franka_state_interface.h>
 #include <franka_hw/trigger_rate.h>
 
-#include <fr3_ros/pinocchio_utils.h>
-#include <fr3_ros/controller_utils.h>
-<<<<<<< HEAD
-#include "fr3_ros/visualization_utils.h"
-=======
+#include <proxsuite/proxqp/dense/dense.hpp>
 
->>>>>>> 960e3f2e99b6888bd2093fe6efe0d84540d59f2e
 namespace fr3_ros {
 
-class TaskJointPDController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
-                                                                                    hardware_interface::EffortJointInterface, 
-                                                                                    franka_hw::FrankaStateInterface> {
+class WaypointController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
+                                                                                 hardware_interface::EffortJointInterface, 
+                                                                                 franka_hw::FrankaStateInterface> {
  public:
   bool init(hardware_interface::RobotHW* robot_hardware, ros::NodeHandle& node_handle) override;
   void starting(const ros::Time&) override;
   void update(const ros::Time&, const ros::Duration& period) override;
   void stopping(const ros::Time&) override;
-  MarkerListVisualizer *marker_visulizer;
+
+  // define QP parameters
+  proxsuite::proxqp::isize dim;
+  proxsuite::proxqp::isize n_eq;
+  proxsuite::proxqp::isize n_in;
+  proxsuite::proxqp::dense::QP<double> qp;
+
+  // define constructor and member initialization list
+  WaypointController() : dim(14), n_eq(7), n_in(0), qp(dim, n_eq, n_in) {};
 
  private:
-  //publisher object for the log messages
-  ros::Publisher control_log_publisher;
-  ros::Publisher marker_pub;
+  void computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
+                               const Eigen::Matrix<double, 7, 1>& dq);
   
-  LogDataType logData;
+  void resetTarget(void);
+
+  void computeEndEffectorTarget(const double& controlller_clock, const double& traj_duration);
+
   // pinocchio model & data
   pinocchio::Model model;
   pinocchio::Data data;
 
   // end-effector frame id in Pinocchio
   int ee_frame_id;
+
+  // urdf file path for fr3 model
+  std::string urdf_filename;
 
   // interface with franka_hw
   std::unique_ptr<franka_hw::FrankaStateHandle> state_handle_;
@@ -74,13 +82,29 @@ class TaskJointPDController : public controller_interface::MultiInterfaceControl
   // applied torque
   Eigen::Matrix<double, 7, 1> torques;
 
-  // fixed rotation matrix target
-  Eigen::Matrix<double, 3, 3> R_target;
-
-  // changing position vector target
+  // target position and orientation at each time step
   Eigen::Matrix<double, 3, 1> p_target;
+  Eigen::Matrix<double, 3, 1> v_target;
+  Eigen::Matrix<double, 3, 1> a_target;
+  Eigen::Matrix<double, 3, 3> R_target;
+  Eigen::Vector3d w_target;
+  Eigen::Vector3d dw_target;
+
+  // intial position and orientation
+  Eigen::Matrix<double, 3, 1> p_start;
+  Eigen::Matrix<double, 3, 3> R_start;
+
+  // terminal target position and orientation
+  Eigen::Matrix<double, 3, 1> p_end;
+  Eigen::Matrix<double, 3, 3> R_end;
+
+  // changing positional vector target
   Eigen::Matrix<double, 6, 1> dP_target;
   Eigen::Matrix<double, 6, 1> ddP_cmd;
+
+  // errors at each time step
+  Eigen::Matrix<double, 6, 1> P_error;
+  Eigen::Vector3d rotvec_err;
 
   // measured end-effector configuration
   Eigen::Matrix<double, 3, 1> p_measured;
@@ -96,12 +120,32 @@ class TaskJointPDController : public controller_interface::MultiInterfaceControl
   // define gains for PD controller
   Eigen::Matrix<double, 7, 7> Kp;
   Eigen::Matrix<double, 7, 7> Kd;
+  Eigen::Matrix<double, 6, 6> tKp;
+  Eigen::Matrix<double, 6, 6> tKd;
 
   std::vector<double> k_gains_;
   std::vector<double> d_gains_;
+  std::vector<double> tk_gains_;
+  std::vector<double> td_gains_;
 
-  double half_period = 3;
-  double amplitude = 0.3;
+  // QP parameters
+  Eigen::Matrix<double, 14, 14> qp_H;
+  Eigen::Matrix<double, 14, 1> qp_g;
+  Eigen::Matrix<double, 7, 14> qp_A;
+  Eigen::Matrix<double, 7, 1> qp_b;
+
+  // QP problem parameters
+  Eigen::Matrix<double, 7, 1> q_nominal;
+  Eigen::Matrix<double, 7, 1> ddq_nominal;
+  Eigen::Matrix<double, 6, 1> Jddq_desired;
+  Eigen::Matrix<double, 7, 7> proj_mat;
+  double epsilon;
+  bool qp_initialized = false;
+
+  // define trajectory
+  std::array<Eigen::Matrix<double, 3, 1>, 3> waypoints;
+  int waypoint_id;
+  double traj_duration;
 };
 
 }  // namespace fr3_ros

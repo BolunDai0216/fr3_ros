@@ -78,8 +78,18 @@ add_library(fr3_ros
   src/joint_pd_controller.cpp
   src/task_joint_pd_controller.cpp
   src/qp_controller.cpp
+  src/waypoint_controller.cpp
+  src/waypoint_cbf_controller.cpp
+  src/cbf_controller.cpp
+  src/poly_path_controller.cpp
+  src/repetitive_calib_controller.cpp
   src/controller_utils.cpp
+<<<<<<< HEAD
   src/visualization_utils.cpp
+=======
+  src/traj_gen.cpp
+  src/cbf_utils.cpp
+>>>>>>> 960e3f2e99b6888bd2093fe6efe0d84540d59f2e
 )
 
 add_dependencies(fr3_ros

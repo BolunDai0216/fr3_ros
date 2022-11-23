@@ -182,7 +182,7 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
   dP_target[1] = (M_PI / half_period) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
 
   // compute new ddP_cmd along the y-axis
-  ddP_cmd[1] = (M_PI * M_PI / (half_period * half_period)) * std::cos(M_PI * controlller_clock / half_period) * amplitude;
+  ddP_cmd[1] = -(M_PI * M_PI / (half_period * half_period)) * std::sin(M_PI * controlller_clock / half_period) * amplitude;
 
   // compute positional error
   Eigen::Matrix<double, 6, 1> P_error;
@@ -199,8 +199,6 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
 
   // get M, h, g
   getDynamicsParameter(model, data, q, dq);
-  logData.M = data.M;
-  logData.C = data.C;
 
   torques = data.M * ddq_cmd + (data.nle - data.g);
 
@@ -211,8 +209,13 @@ void TaskJointPDController::update(const ros::Time& /*time*/, const ros::Duratio
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(torques[i]);
   }
+  
+  // log data
+  logData.M = data.M;
+  logData.C = data.C;
   logData.torque_cmd = torques;
-  //publish the log data
+  
+  // publish the log data
   publishLogMsgs(&logData, &control_log_publisher);
   
   std::vector<Eigen::Matrix<double, 7, 1>> poses;

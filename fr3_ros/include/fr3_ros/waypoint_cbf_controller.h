@@ -28,17 +28,12 @@
 #include <franka_hw/trigger_rate.h>
 
 #include <proxsuite/proxqp/dense/dense.hpp>
-<<<<<<< HEAD
-#include <proxsuite/proxqp/utils/random_qp_problems.hpp>
-#include "visualization_utils.h"
-=======
->>>>>>> 960e3f2e99b6888bd2093fe6efe0d84540d59f2e
 
 namespace fr3_ros {
 
-class QPController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
-                                                                           hardware_interface::EffortJointInterface, 
-                                                                           franka_hw::FrankaStateInterface> {
+class WaypointCBFController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
+                                                                                 hardware_interface::EffortJointInterface, 
+                                                                                 franka_hw::FrankaStateInterface> {
  public:
   bool init(hardware_interface::RobotHW* robot_hardware, ros::NodeHandle& node_handle) override;
   void starting(const ros::Time&) override;
@@ -52,19 +47,25 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   proxsuite::proxqp::dense::QP<double> qp;
 
   // define constructor and member initialization list
-  QPController() : dim(14), n_eq(7), n_in(0), qp(dim, n_eq, n_in) {};
+  WaypointCBFController() : dim(14), n_eq(7), n_in(1), qp(dim, n_eq, n_in) {};
 
  private:
   void computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, 
-                               const Eigen::Matrix<double, 7, 1>& dq,
-                               const Eigen::Matrix<double, 7, 6>& pinv_jacobian);
+                               const Eigen::Matrix<double, 7, 1>& dq);
+  
+  void resetTarget(void);
+
+  void computeEndEffectorTarget(const double& controlller_clock, const double& traj_duration);
 
   // pinocchio model & data
   pinocchio::Model model;
   pinocchio::Data data;
-  
+
   // end-effector frame id in Pinocchio
   int ee_frame_id;
+
+  // urdf file path for fr3 model
+  std::string urdf_filename;
 
   // interface with franka_hw
   std::unique_ptr<franka_hw::FrankaStateHandle> state_handle_;
@@ -81,11 +82,23 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   // applied torque
   Eigen::Matrix<double, 7, 1> torques;
 
-  // fixed rotation matrix target
-  Eigen::Matrix<double, 3, 3> R_target;
-
-  // changing position vector target
+  // target position and orientation at each time step
   Eigen::Matrix<double, 3, 1> p_target;
+  Eigen::Matrix<double, 3, 1> v_target;
+  Eigen::Matrix<double, 3, 1> a_target;
+  Eigen::Matrix<double, 3, 3> R_target;
+  Eigen::Vector3d w_target;
+  Eigen::Vector3d dw_target;
+
+  // intial position and orientation
+  Eigen::Matrix<double, 3, 1> p_start;
+  Eigen::Matrix<double, 3, 3> R_start;
+
+  // terminal target position and orientation
+  Eigen::Matrix<double, 3, 1> p_end;
+  Eigen::Matrix<double, 3, 3> R_end;
+
+  // changing positional vector target
   Eigen::Matrix<double, 6, 1> dP_target;
   Eigen::Matrix<double, 6, 1> ddP_cmd;
 
@@ -115,25 +128,33 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   std::vector<double> tk_gains_;
   std::vector<double> td_gains_;
 
-  double half_period = 6;
-  double amplitude = 0.2;
-
-  // define QP parameters
+  // QP parameters
   Eigen::Matrix<double, 14, 14> qp_H;
   Eigen::Matrix<double, 14, 1> qp_g;
   Eigen::Matrix<double, 7, 14> qp_A;
   Eigen::Matrix<double, 7, 1> qp_b;
+  Eigen::Matrix<double, 1, 14> qp_C;
+  Eigen::Matrix<double, 1, 1> qp_lb;
+  Eigen::Matrix<double, 1, 1> qp_ub;
 
+  // QP problem parameters
   Eigen::Matrix<double, 7, 1> q_nominal;
   Eigen::Matrix<double, 7, 1> ddq_nominal;
-
   Eigen::Matrix<double, 6, 1> Jddq_desired;
   Eigen::Matrix<double, 7, 7> proj_mat;
-  
   double epsilon;
-  std::string urdf_filename;
-  
   bool qp_initialized = false;
+
+  // CBF constraint parameters
+  Eigen::Matrix<double, 14, 1> F_mat;
+  Eigen::Matrix<double, 14, 7> G_mat;
+  double d_max;
+  Eigen::Matrix<double, 3, 1> normalVec;
+
+  // define trajectory
+  std::array<Eigen::Matrix<double, 3, 1>, 3> waypoints;
+  int waypoint_id;
+  double traj_duration;
 };
 
 }  // namespace fr3_ros
