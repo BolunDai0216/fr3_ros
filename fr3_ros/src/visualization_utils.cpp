@@ -27,7 +27,7 @@ namespace fr3_ros {
     // marker.lifetime = ros::Duration();
 
     // iterate over the poses and load the markers array with marker
-    for(int i=0; i<2; i++)
+    for(int i=0; i<marker_poses.size(); i++)
     {
       marker.color.r = colors[i](0);
       marker.color.g = colors[i](1);
