@@ -156,7 +156,7 @@ void PolyPathController::starting(const ros::Time& /* time */) {
   ee_frame_id = model.getFrameId("fr3_hand_tcp");
 
   // define duration of each trajctory segment
-  traj_duration = 5.0;
+  traj_duration = 10.0;
 
   // get current end-effector position and orientation
   p_start = data.oMf[ee_frame_id].translation();
@@ -167,10 +167,10 @@ void PolyPathController::starting(const ros::Time& /* time */) {
   ddP_cmd << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
   // define waypoints and set current target waypoint
-  waypoints[0] << 0.35, -0.4, 0.4;
-  waypoints[1] << 0.35, -0.4, 0.1;
-  waypoints[2] << 0.35, -0.4, 0.4;
-  waypoints[3] << 0.3, 0.0, 0.48;
+  waypoints[0] << 0.4, 0.4, 0.2;
+  waypoints[1] << 0.3, 0.0, 0.5;
+  waypoints[2] << 0.4, -0.4, 0.2;
+  waypoints[3] << 0.3, 0.0, 0.5;
   waypoint_id = 0;
 
   // define terminal target for both position and orientation
