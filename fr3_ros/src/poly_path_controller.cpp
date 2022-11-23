@@ -15,7 +15,6 @@
 #include <ros/ros.h>   
 
 #include <proxsuite/proxqp/dense/dense.hpp>
-#include <proxsuite/proxqp/utils/random_qp_problems.hpp>
 #include <Eigen/SVD>
 
 namespace pin = pinocchio;

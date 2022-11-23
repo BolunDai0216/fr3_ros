@@ -15,7 +15,6 @@
 #include <ros/ros.h>   
 
 #include <proxsuite/proxqp/dense/dense.hpp>
-#include <proxsuite/proxqp/utils/random_qp_problems.hpp>
 
 namespace pin = pinocchio;
 
@@ -171,7 +170,7 @@ void WaypointCBFController::starting(const ros::Time& /* time */) {
   ddP_cmd << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
   // define obstacle
-  normalVec << 0.0, 1.0, 0.0;
+  normalVec << 0.0, 2.0, 0.0;
 
   // define waypoints and set current target waypoint
   waypoints[0] << 0.4, 0.4, 0.2;
