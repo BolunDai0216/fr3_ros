@@ -29,7 +29,11 @@
 
 #include <fr3_ros/pinocchio_utils.h>
 #include <fr3_ros/controller_utils.h>
+<<<<<<< HEAD
+#include "fr3_ros/visualization_utils.h"
+=======
 
+>>>>>>> 960e3f2e99b6888bd2093fe6efe0d84540d59f2e
 namespace fr3_ros {
 
 class TaskJointPDController : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface, 
@@ -40,12 +44,14 @@ class TaskJointPDController : public controller_interface::MultiInterfaceControl
   void starting(const ros::Time&) override;
   void update(const ros::Time&, const ros::Duration& period) override;
   void stopping(const ros::Time&) override;
+  MarkerListVisualizer *marker_visulizer;
 
  private:
   //publisher object for the log messages
   ros::Publisher control_log_publisher;
+  ros::Publisher marker_pub;
+  
   LogDataType logData;
-
   // pinocchio model & data
   pinocchio::Model model;
   pinocchio::Data data;

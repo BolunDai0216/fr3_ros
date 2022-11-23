@@ -9,6 +9,11 @@
 #include "fr3_ros/controlLogs.h"
 #include "ros/ros.h"
 
+<<<<<<< HEAD
+#include <ros/ros.h>
+
+=======
+>>>>>>> 960e3f2e99b6888bd2093fe6efe0d84540d59f2e
 namespace fr3_ros {
 
 struct LogDataType{

@@ -28,6 +28,11 @@
 #include <franka_hw/trigger_rate.h>
 
 #include <proxsuite/proxqp/dense/dense.hpp>
+<<<<<<< HEAD
+#include <proxsuite/proxqp/utils/random_qp_problems.hpp>
+#include "visualization_utils.h"
+=======
+>>>>>>> 960e3f2e99b6888bd2093fe6efe0d84540d59f2e
 
 namespace fr3_ros {
 
@@ -57,7 +62,7 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   // pinocchio model & data
   pinocchio::Model model;
   pinocchio::Data data;
-
+  
   // end-effector frame id in Pinocchio
   int ee_frame_id;
 

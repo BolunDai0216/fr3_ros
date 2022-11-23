@@ -137,6 +137,8 @@ bool QPController::init(hardware_interface::RobotHW* robot_hw,
   // build pin_robot from urdf
   pin::urdf::buildModel(urdf_filename, model);
   data = pin::Data(model);
+  //instantiate a marker publisher class
+  // marker_visulizer = new MarkerListVisualizer(node_handle, 2, 1000);
 
   return true;
 }
@@ -235,6 +237,13 @@ void QPController::update(const ros::Time& /*time*/, const ros::Duration& period
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(torques[i]);
   }
+  // std::vector<Eigen::Matrix<double, 7, 1>> poses;
+  // Eigen::VectorXd pose(7);
+  // pose << 0,0,0,0,0,0,1;
+  // poses.push_back(pose);
+  // pose << 1,0,0,0,0,0,1;
+  // poses.push_back(pose);
+  // marker_visulizer->publish(poses);
 }
 
 void QPController::stopping(const ros::Time& /*time*/) {
