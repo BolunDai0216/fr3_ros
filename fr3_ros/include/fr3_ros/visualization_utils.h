@@ -15,7 +15,7 @@ namespace fr3_ros {
   
   public:
     MarkerListVisualizer(ros::NodeHandle &nh, int markers_count, int max_pub_rate);
-    void publish(std::vector<Eigen::Matrix<double, 7, 1>> &marker_poses);
+    void publish(std::vector<Eigen::Matrix<double, 7, 1>> &marker_poses, std::vector<Eigen::Vector3d> &colors);
 
   private:
     // pinocchio model & data
