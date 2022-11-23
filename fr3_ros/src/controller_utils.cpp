@@ -46,6 +46,21 @@ void publishLogMsgs(LogDataType *data, ros::Publisher *pub) {
 
   for(int i=0; i < data->torque_cmd.size(); i++)
     log_msg.torque_cmd.push_back(data->torque_cmd.data()[i]);
+  
+  for(int i=0; i<3; i++)
+    log_msg.p.push_back(data->p[i]);
+  
+  for(int i=0; i<3; i++)
+    log_msg.p_des.push_back(data->p_des[i]);
+  
+  for(int i=0; i<6; i++)
+    log_msg.P_dot.push_back(data->P_dot[i]);
+  
+  for(int i=0; i<6; i++)
+    log_msg.P_dot_des.push_back(data->P_dot_des[i]);
+
+  for(int i=0; i<6; i++)
+    log_msg.P_ddot_cmd.push_back(data->P_ddot_cmd[i]);
 
   log_msg.header.stamp = ros::Time::now();
   pub->publish(log_msg);

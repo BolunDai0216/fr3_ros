@@ -11,4 +11,9 @@ float64[] J_dot
 float64[] J_aux
 float64[] M_aux
 float64[] torque_cmd
+float64[] p
+float64[] p_des
+float64[] P_dot
+float64[] P_dot_des
+float64[] P_ddot_cmd
 

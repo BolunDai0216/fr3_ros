@@ -111,8 +111,8 @@ class QPController : public controller_interface::MultiInterfaceController<frank
   std::vector<double> tk_gains_;
   std::vector<double> td_gains_;
 
-  double half_period = 6;
-  double amplitude = 0.2;
+  double half_period = 3;
+  double amplitude = 0.3;
 
   // define QP parameters
   Eigen::Matrix<double, 14, 14> qp_H;
