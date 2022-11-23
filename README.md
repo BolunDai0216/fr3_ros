@@ -29,5 +29,4 @@ Please deactivate the conda environment before running any of the launch files.
 
 ```console
 conda deactivate
-source devel/setup.sh # or source devel/setup.zsh
 ```
