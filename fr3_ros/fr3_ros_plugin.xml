@@ -39,4 +39,9 @@
       A controller that performs a repetitive task for calibration purposes.
     </description>
   </class>
+  <class name="fr3_ros/JointVelocityController" type="fr3_ros::JointVelocityController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that controls the joint velocity for testing purposes.
+    </description>
+  </class>
 </library>

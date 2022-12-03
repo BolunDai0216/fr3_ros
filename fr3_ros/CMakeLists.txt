@@ -83,6 +83,7 @@ add_library(fr3_ros
   src/cbf_controller.cpp
   src/poly_path_controller.cpp
   src/repetitive_calib_controller.cpp
+  src/joint_velocity_controller.cpp
   src/controller_utils.cpp
   src/visualization_utils.cpp
   src/traj_gen.cpp
