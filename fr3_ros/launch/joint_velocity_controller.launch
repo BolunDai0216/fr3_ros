@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
+  <node pkg="rosbag" type="record" name="rosbag_recorder" respawn="true" output="screen" args="-o $(find fr3_ros)/bag/ /joint_velocity_controller/control_logs" />
   <include file="$(find franka_control)/launch/franka_control.launch" pass_all_args="true"/>
   <arg name="arm_id" default="fr3" />
   <rosparam command="load" file="$(find fr3_ros)/config/fr3_ros.yaml" subst_value="true" />
