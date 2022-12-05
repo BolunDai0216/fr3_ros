@@ -303,3 +303,7 @@ joint_velocity_controller:
         - $(arg arm_id)_joint5
         - $(arg arm_id)_joint6
         - $(arg arm_id)_joint7
+
+cartesian_velocity_controller:
+    type: fr3_ros/CartesianVelocityController
+    arm_id: $(arg arm_id)

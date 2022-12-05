@@ -105,11 +105,11 @@ void JointVelocityController::update(const ros::Time& /* time */, const ros::Dur
   Eigen::Map<Eigen::Matrix<double, 7, 1>> q(robot_state.q.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
 
-  ros::Duration time_max(8.0);
+  ros::Duration half_cycle(5.0);
   double omega_max = 0.1;
-  double cycle = std::floor(
-      std::pow(-1.0, (elapsed_time_.toSec() - std::fmod(elapsed_time_.toSec(), time_max.toSec())) / time_max.toSec()));
-  double omega = cycle * omega_max / 2.0 * (1.0 - std::cos(2.0 * M_PI / time_max.toSec() * elapsed_time_.toSec()));
+  double cycle = std::floor(std::pow(
+      -1.0, (elapsed_time_.toSec() - std::fmod(elapsed_time_.toSec(), half_cycle.toSec())) / half_cycle.toSec()));
+  double omega = cycle * omega_max / 2.0 * (1.0 - std::cos(2.0 * M_PI / half_cycle.toSec() * elapsed_time_.toSec()));
 
   for (size_t i = 0; i < 7; ++i)
   {

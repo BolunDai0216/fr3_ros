@@ -44,4 +44,9 @@
       A controller that controls the joint velocity for testing purposes.
     </description>
   </class>
+  <class name="fr3_ros/CartesianVelocityController" type="fr3_ros::CartesianVelocityController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that controls the end-effector velocity for testing purposes.
+    </description>
+  </class>
 </library>
