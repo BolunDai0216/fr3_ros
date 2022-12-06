@@ -114,25 +114,13 @@ void CartesianVelocityController::update(const ros::Time& /* time */, const ros:
   // convert to Eigen
   Eigen::Map<Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
-
-  // // define end-effector velocity profile
-  // double half_period = 4.0;
-  // double v_max = 0.5;
-  // double angle = M_PI / 4.0;
-  // double cycle =
-  //     std::floor(pow(-1.0, (elapsed_time_.toSec() - std::fmod(elapsed_time_.toSec(), half_period)) / half_period));
-
-  // // compute desired end-effector velocity
-  // double v = cycle * v_max / 2.0 * (1.0 - std::cos(2.0 * M_PI / half_period * elapsed_time_.toSec()));
-  // double v_x = std::cos(angle) * v;
-  // double v_z = -std::sin(angle) * v;
+  Eigen::Map<Eigen::Matrix<double, 7, 1>> dq_d(robot_state.dq_d.data());
 
   double T = 1.5;
   double amplitude = 0.1;
   double v_y = (2.0 * M_PI / T) * amplitude * std::sin((2.0 * M_PI / T) * elapsed_time_.toSec());
 
   // set end-effector velocity
-  // std::array<double, 6> command = { { v_x, 0.0, v_z, 0.0, 0.0, 0.0 } };
   std::array<double, 6> command = { { 0.0, v_y, 0.0, 0.0, 0.0, 0.0 } };
   velocity_cartesian_handle_->setCommand(command);
 
@@ -140,6 +128,8 @@ void CartesianVelocityController::update(const ros::Time& /* time */, const ros:
   Eigen::Map<Eigen::Matrix<double, 6, 1>> P_dot_des(command.data());
 
   // // log data
+  logData.q_dot = dq;
+  logData.q_dot_des = dq_d;
   logData.P_dot = jacobian * dq;
   logData.P_dot_des = P_dot_des;
 
