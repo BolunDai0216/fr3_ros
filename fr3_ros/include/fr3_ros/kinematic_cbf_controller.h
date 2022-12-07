@@ -73,9 +73,6 @@ private:
   // for logging data
   LogDataType logData;
 
-  // pseudo-inverse
-  Eigen::MatrixXd pinv_jacobian;
-
   // initial position and orientation
   Eigen::Matrix<double, 3, 1> p_start;
   Eigen::Matrix<double, 3, 3> R_start;
@@ -90,14 +87,22 @@ private:
   Eigen::Matrix<double, 3, 3> R_target;
   Eigen::Matrix<double, 3, 1> w_target;
 
+  // positional measurements
+  Eigen::Matrix<double, 3, 1> p_current;
+  Eigen::Matrix<double, 3, 3> R_current;
+
   // positional end-effector error
   Eigen::Matrix<double, 6, 1> P_error;
 
   // positional target
-  Eigen::Matrix<double, 6, 1> P_target;
+  Eigen::Matrix<double, 6, 1> dP_target;
 
   // commanded joint velocity
   Eigen::Matrix<double, 7, 1> dq_cmd;
+
+  // Jacobian matrix and its pseudo-inverse
+  Eigen::Matrix<double, 6, 7> jacobian;
+  Eigen::MatrixXd pinv_jacobian;
 
   // trajectory configurations
   double traj_duration;

@@ -141,7 +141,7 @@ void KinematicCBFController::starting(const ros::Time& /* time */)
   R_transform << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
 
   // define terminal target for both position and orientation
-  p_end << 0.4, 0.0, 0.3;
+  p_end << 0.5, 0.0, 0.2;
   R_end = R_transform * R_start;
 
   // duration of trajectory segment
@@ -161,42 +161,41 @@ void KinematicCBFController::update(const ros::Time& /* time */, const ros::Dura
   Eigen::Map<Eigen::Matrix<double, 7, 1>> q(robot_state.q.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
 
-  // get end-effector Jacobian
-  std::array<double, 42> jacobian_array = model_handle_->getZeroJacobian(franka::Frame::kEndEffector);
-  Eigen::Map<Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
+  // update pinocchio
+  updatePinocchioModel(model, data, q, dq);
+
+  // get end-effector jacobian and its time derivative
+  pin::getFrameJacobian(model, data, ee_frame_id, pin::LOCAL_WORLD_ALIGNED, jacobian);
+
+  // get current end-effector position and orientation
+  p_current = data.oMf[ee_frame_id].translation();
+  R_current = data.oMf[ee_frame_id].rotation();
 
   // compute α, dα, ddα
   auto [alpha, dalpha, ddalpha] = getAlphas(elapsed_time_.toSec(), traj_duration);
 
   // end-effector position and velocity target
-  p_target = alpha * (p_end - p_start);
+  p_target = alpha * (p_end - p_start) + p_start;
   v_target = dalpha * (p_end - p_start);
   R_target = R_start;
   w_target << 0.0, 0.0, 0.0;
 
-  P_error << p_target[0], p_target[1], p_target[2], 0.0, 0.0, 0.0;
-  P_target << v_target[0], v_target[1], v_target[2], w_target[0], w_target[1], w_target[2];
+  // compute positional errors
+  auto rotvec_err = computeRotVecError(R_target, R_current);
 
-  auto a = 10 * P_error + P_target;
+  P_error << p_target - p_current, rotvec_err;
+  dP_target << v_target, w_target;
 
   // compute pseudo-inverse of Jacobian
   franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
 
   // compute commanded joint velocity
-  dq_cmd = pinv_jacobian * a;
+  dq_cmd = pinv_jacobian * (10 * P_error + dP_target);
 
   for (size_t i = 0; i < 7; ++i)
   {
     velocity_joint_handles_[i].setCommand(dq_cmd[i]);
   }
-
-  //   // log data
-  //   logData.q = q;
-  //   logData.q_dot = dq;
-  //   logData.q_dot_des = omega * Eigen::MatrixXd::Ones(7, 1);
-
-  //   // publish the log data
-  //   publishLogMsgs(&logData, &control_log_publisher);
 }
 
 void KinematicCBFController::stopping(const ros::Time& /*time*/)
