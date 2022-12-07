@@ -149,6 +149,13 @@ void KinematicCBFController::starting(const ros::Time& /* time */)
 
   // initialize clock
   elapsed_time_ = ros::Duration(0.0);
+
+  // initialize qp parameters with zeros
+  qp_H = Eigen::MatrixXd::Zero(7, 7);
+  qp_g = Eigen::MatrixXd::Zero(7, 1);
+
+  // set nominal joint configuration
+  q_nominal = q_init;
 }
 
 void KinematicCBFController::update(const ros::Time& /* time */, const ros::Duration& period)
@@ -190,7 +197,25 @@ void KinematicCBFController::update(const ros::Time& /* time */, const ros::Dura
   franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
 
   // compute commanded joint velocity
-  dq_cmd = pinv_jacobian * (10 * P_error + dP_target);
+  // dq_cmd = pinv_jacobian * (10 * P_error + dP_target);
+
+  // get qp_H, qp_g
+  computeSolverParameters(q, dq);
+
+  // solve qp
+  if (qp_initialized)
+  {
+    qp.update(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+  }
+  else
+  {
+    qp.init(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+    qp_initialized = true;
+  }
+  qp.solve();
+
+  // get commanded joint velocity from solver
+  dq_cmd = qp.results.x;
 
   for (size_t i = 0; i < 7; ++i)
   {
@@ -203,6 +228,22 @@ void KinematicCBFController::stopping(const ros::Time& /*time*/)
   // WARNING: DO NOT SEND ZERO VELOCITIES HERE AS IN CASE OF ABORTING DURING MOTION
   // A JUMP TO ZERO WILL BE COMMANDED PUTTING HIGH LOADS ON THE ROBOT. LET THE DEFAULT
   // BUILT-IN STOPPING BEHAVIOR SLOW DOWN THE ROBOT.
+}
+
+void KinematicCBFController::computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q,
+                                                     const Eigen::Matrix<double, 7, 1>& dq)
+{
+  // compute pseudo-inverse of Jacobian
+  franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
+
+  Jdq_desired = 10.0 * P_error + dP_target;
+  proj_mat = Eigen::MatrixXd::Identity(7, 7) - pinv_jacobian * jacobian;
+  dq_nominal = 1.0 * (q_nominal - q);
+
+  qp_H.topLeftCorner(7, 7) = 2 * (jacobian.transpose() * jacobian + epsilon * proj_mat.transpose() * proj_mat);
+  qp_g.topLeftCorner(7, 1) =
+      -2 * (Jdq_desired.transpose() * jacobian + epsilon * dq_nominal.transpose() * proj_mat.transpose() * proj_mat)
+               .transpose();
 }
 
 }  // namespace fr3_ros

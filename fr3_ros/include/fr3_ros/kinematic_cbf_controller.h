@@ -50,6 +50,8 @@ public:
   KinematicCBFController() : dim(7), n_eq(0), n_in(1), qp(dim, n_eq, n_in){};
 
 private:
+  void computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, const Eigen::Matrix<double, 7, 1>& dq);
+
   // pinocchio model & data
   pinocchio::Model model;
   pinocchio::Data data;
@@ -103,6 +105,18 @@ private:
   // Jacobian matrix and its pseudo-inverse
   Eigen::Matrix<double, 6, 7> jacobian;
   Eigen::MatrixXd pinv_jacobian;
+
+  // QP parameters
+  Eigen::Matrix<double, 7, 7> qp_H;
+  Eigen::Matrix<double, 7, 1> qp_g;
+
+  // QP problem parameters
+  Eigen::Matrix<double, 7, 1> q_nominal;
+  Eigen::Matrix<double, 7, 1> dq_nominal;
+  Eigen::Matrix<double, 6, 1> Jdq_desired;
+  Eigen::Matrix<double, 7, 7> proj_mat;
+  double epsilon = 1.0;
+  bool qp_initialized = false;
 
   // trajectory configurations
   double traj_duration;
