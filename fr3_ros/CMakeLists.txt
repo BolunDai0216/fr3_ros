@@ -85,6 +85,7 @@ add_library(fr3_ros
   src/repetitive_calib_controller.cpp
   src/joint_velocity_controller.cpp
   src/cartesian_velocity_controller.cpp
+  src/kinematic_cbf_controller.cpp
   src/controller_utils.cpp
   src/visualization_utils.cpp
   src/traj_gen.cpp

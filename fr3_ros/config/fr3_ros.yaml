@@ -1,6 +1,6 @@
 joint_pd_controller:
     type: fr3_ros/JointPDController
-    urdf_filename: /home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf
+    urdf_filename: /home/bolun/bolun_ws/src/fr3_ros/fr3_ros/robot/fr3.urdf
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1
@@ -34,7 +34,7 @@ joint_pd_controller:
 
 task_joint_pd_controller:
     type: fr3_ros/TaskJointPDController
-    urdf_filename: /home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf
+    urdf_filename: /home/bolun/bolun_ws/src/fr3_ros/fr3_ros/robot/fr3.urdf
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1
@@ -68,7 +68,7 @@ task_joint_pd_controller:
 
 qp_controller:
     type: fr3_ros/QPController
-    urdf_filename: /home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf
+    urdf_filename: /home/bolun/bolun_ws/src/fr3_ros/fr3_ros/robot/fr3.urdf
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1
@@ -112,7 +112,7 @@ qp_controller:
 
 waypoint_controller:
     type: fr3_ros/WaypointController
-    urdf_filename: /home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf
+    urdf_filename: /home/bolun/bolun_ws/src/fr3_ros/fr3_ros/robot/fr3.urdf
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1
@@ -156,7 +156,7 @@ waypoint_controller:
 
 waypoint_cbf_controller:
     type: fr3_ros/WaypointCBFController
-    urdf_filename: /home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf
+    urdf_filename: /home/bolun/bolun_ws/src/fr3_ros/fr3_ros/robot/fr3.urdf
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1
@@ -201,7 +201,7 @@ waypoint_cbf_controller:
 
 cbf_controller:
     type: fr3_ros/CBFController
-    urdf_filename: /home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf
+    urdf_filename: /home/bolun/bolun_ws/src/fr3_ros/fr3_ros/robot/fr3.urdf
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1
@@ -246,7 +246,7 @@ cbf_controller:
 
 poly_path_controller:
     type: fr3_ros/PolyPathController
-    urdf_filename: /home/bolun/bolun_ws/src/franka_ros_bolun/franka_example_controllers/fr3.urdf
+    urdf_filename: /home/bolun/bolun_ws/src/fr3_ros/fr3_ros/robot/fr3.urdf
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1
@@ -307,3 +307,16 @@ joint_velocity_controller:
 cartesian_velocity_controller:
     type: fr3_ros/CartesianVelocityController
     arm_id: $(arg arm_id)
+
+kinematic_cbf_controller:
+    type: fr3_ros/KinematicCBFController
+    arm_id: $(arg arm_id)
+    urdf_filename: /home/bolun/bolun_ws/src/fr3_ros/fr3_ros/robot/fr3.urdf
+    joint_names:
+        - $(arg arm_id)_joint1
+        - $(arg arm_id)_joint2
+        - $(arg arm_id)_joint3
+        - $(arg arm_id)_joint4
+        - $(arg arm_id)_joint5
+        - $(arg arm_id)_joint6
+        - $(arg arm_id)_joint7
