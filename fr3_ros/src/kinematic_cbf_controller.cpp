@@ -136,16 +136,48 @@ void KinematicCBFController::starting(const ros::Time& /* time */)
   p_start = data.oMf[ee_frame_id].translation();
   R_start = data.oMf[ee_frame_id].rotation();
 
+  // define waypoints and set current target waypoint
+
+  //   waypoints[0] << 0.6, 0.0, 0.3;
+  //   waypoints[1] << 0.6, 0.0, 0.3;
+
+  waypoints[0] << 0.4, 0.0, 0.7;
+  waypoints[1] << 0.7, 0.0, 0.5;
+  waypoints[2] << 0.7, 0.0, 0.5;
+  waypoints[3] << 0.5, 0.0, 0.5;
+  waypoints[4] << 0.35, 0.0, 0.5;
+
+  //   waypoints[0] << 0.4, 0.0, 0.7;
+  //   waypoints[1] << 0.6, 0.0, 0.3;
+  //   waypoints[2] << 0.6, 0.0, 0.3;
+  //   waypoints[3] << 0.5, 0.0, 0.3;
+  //   waypoints[4] << 0.3, 0.0, 0.5;
+
+  waypoint_id = 0;
+
   // define rotation between R_end and R_start
   Eigen::Matrix<double, 3, 3> R_transform;
-  R_transform << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
+  R_transform << 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0;
+  //   R_transform << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
+
+  waypoint_rotmats[0] = R_transform * R_start;
+  waypoint_rotmats[1] = R_transform * R_start;
+  waypoint_rotmats[2] = R_transform * R_start;
+  waypoint_rotmats[3] = R_transform * R_start;
+  waypoint_rotmats[4] = R_start;
+
+  // define CBF types along the trajectory
+  cbf_types[0] = "x";
+  cbf_types[1] = "x";
+  cbf_types[2] = "z";
+  cbf_types[3] = "z";
+  cbf_types[4] = "x";
 
   // define terminal target for both position and orientation
-  p_end << 0.5, 0.0, 0.2;
-  R_end = R_transform * R_start;
+  resetTarget();
 
   // duration of trajectory segment
-  traj_duration = 10.0;
+  traj_duration = 8.0;
 
   // initialize clock
   elapsed_time_ = ros::Duration(0.0);
@@ -153,6 +185,9 @@ void KinematicCBFController::starting(const ros::Time& /* time */)
   // initialize qp parameters with zeros
   qp_H = Eigen::MatrixXd::Zero(7, 7);
   qp_g = Eigen::MatrixXd::Zero(7, 1);
+  qp_C = Eigen::MatrixXd::Zero(1, 7);
+  qp_lb = Eigen::MatrixXd::Zero(1, 1);
+  qp_ub = Eigen::MatrixXd::Zero(1, 1);
 
   // set nominal joint configuration
   q_nominal = q_init;
@@ -178,14 +213,29 @@ void KinematicCBFController::update(const ros::Time& /* time */, const ros::Dura
   p_current = data.oMf[ee_frame_id].translation();
   R_current = data.oMf[ee_frame_id].rotation();
 
+  // move to next target
+  if (elapsed_time_.toSec() >= traj_duration + 3.0)
+  {
+    resetTarget();
+  }
+
   // compute α, dα, ddα
   auto [alpha, dalpha, ddalpha] = getAlphas(elapsed_time_.toSec(), traj_duration);
 
   // end-effector position and velocity target
   p_target = alpha * (p_end - p_start) + p_start;
   v_target = dalpha * (p_end - p_start);
-  R_target = R_start;
-  w_target << 0.0, 0.0, 0.0;
+
+  // end-effector orientational targets
+  Eigen::Matrix<double, 3, 3> R_error_path = R_end * R_start.transpose();
+  Eigen::AngleAxisd AngleAxisErrPath(R_error_path);
+  Eigen::AngleAxisd TargetAngleAxisErr(alpha * AngleAxisErrPath.angle(), AngleAxisErrPath.axis());
+
+  R_target = TargetAngleAxisErr.toRotationMatrix() * R_start;
+  w_target = alpha * TargetAngleAxisErr.axis() * TargetAngleAxisErr.angle();
+
+  //   R_target = R_start;
+  //   w_target << 0.0, 0.0, 0.0;
 
   // compute positional errors
   auto rotvec_err = computeRotVecError(R_target, R_current);
@@ -196,20 +246,19 @@ void KinematicCBFController::update(const ros::Time& /* time */, const ros::Dura
   // compute pseudo-inverse of Jacobian
   franka_example_controllers::pseudoInverse(jacobian, pinv_jacobian);
 
-  // compute commanded joint velocity
-  // dq_cmd = pinv_jacobian * (10 * P_error + dP_target);
-
-  // get qp_H, qp_g
+  // get qp_H, qp_g, qp_C, qp_lb
   computeSolverParameters(q, dq);
 
   // solve qp
   if (qp_initialized)
   {
-    qp.update(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+    qp.update(qp_H, qp_g, std::nullopt, std::nullopt, qp_C, qp_lb, qp_ub);
+    // qp.update(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
   }
   else
   {
-    qp.init(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+    qp.init(qp_H, qp_g, std::nullopt, std::nullopt, qp_C, qp_lb, qp_ub);
+    // qp.init(qp_H, qp_g, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
     qp_initialized = true;
   }
   qp.solve();
@@ -221,6 +270,10 @@ void KinematicCBFController::update(const ros::Time& /* time */, const ros::Dura
   {
     velocity_joint_handles_[i].setCommand(dq_cmd[i]);
   }
+
+  //   ROS_INFO_STREAM("P_EE: " << p_current.transpose());
+  //   ROS_INFO_STREAM("p_error: " << (p_target - p_current).transpose());
+  //   ROS_INFO_STREAM("v_target: " << v_target.transpose());
 }
 
 void KinematicCBFController::stopping(const ros::Time& /*time*/)
@@ -244,6 +297,44 @@ void KinematicCBFController::computeSolverParameters(const Eigen::Matrix<double,
   qp_g.topLeftCorner(7, 1) =
       -2 * (Jdq_desired.transpose() * jacobian + epsilon * dq_nominal.transpose() * proj_mat.transpose() * proj_mat)
                .transpose();
+
+  if (cbf_type == "x")
+  {
+    qp_C.topLeftCorner(1, 7) = -jacobian.row(0);
+    qp_lb << -1.0 * (0.5 - p_current[0, 0]);
+    qp_ub << 10000.0;
+  }
+
+  if (cbf_type == "z")
+  {
+    qp_C.topLeftCorner(1, 7) = -jacobian.row(2);
+    qp_lb << -1.0 * (1.0 - p_current[2, 0]);
+    qp_ub << 10000.0;
+  }
+
+  ROS_INFO_STREAM("gap: " << qp_C * dq - qp_lb);
+}
+
+void KinematicCBFController::resetTarget(void)
+{
+  // get current end-effector position
+  p_start = data.oMf[ee_frame_id].translation();
+  R_start = data.oMf[ee_frame_id].rotation();
+
+  // define terminal target for both position and orientation
+  p_end = waypoints[waypoint_id];
+  R_end = waypoint_rotmats[waypoint_id];
+
+  ROS_INFO_STREAM("Target P_EE: " << p_end.transpose());
+
+  // reset clock
+  elapsed_time_ = ros::Duration(0.0);
+
+  // set CBF type
+  cbf_type = cbf_types[waypoint_id];
+
+  // update waypoint ID
+  waypoint_id = (waypoint_id + 1) % 5;
 }
 
 }  // namespace fr3_ros

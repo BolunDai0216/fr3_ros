@@ -51,6 +51,7 @@ public:
 
 private:
   void computeSolverParameters(const Eigen::Matrix<double, 7, 1>& q, const Eigen::Matrix<double, 7, 1>& dq);
+  void resetTarget(void);
 
   // pinocchio model & data
   pinocchio::Model model;
@@ -109,17 +110,27 @@ private:
   // QP parameters
   Eigen::Matrix<double, 7, 7> qp_H;
   Eigen::Matrix<double, 7, 1> qp_g;
+  Eigen::Matrix<double, 1, 7> qp_C;
+  Eigen::Matrix<double, 1, 1> qp_lb;
+  Eigen::Matrix<double, 1, 1> qp_ub;
 
   // QP problem parameters
   Eigen::Matrix<double, 7, 1> q_nominal;
   Eigen::Matrix<double, 7, 1> dq_nominal;
   Eigen::Matrix<double, 6, 1> Jdq_desired;
   Eigen::Matrix<double, 7, 7> proj_mat;
-  double epsilon = 1.0;
+  double epsilon = 0.001;
   bool qp_initialized = false;
 
-  // trajectory configurations
+  // define trajectory
+  std::array<Eigen::Matrix<double, 3, 1>, 5> waypoints;
+  std::array<Eigen::Matrix<double, 3, 3>, 5> waypoint_rotmats;
+  std::array<std::string, 5> cbf_types;
+  int waypoint_id;
   double traj_duration;
+
+  // cbf_type
+  std::string cbf_type;
 };
 
 }  // namespace fr3_ros
